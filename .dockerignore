@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.git/
+.gitignore
+.eslintcache
+*.local
+CLAUDE.md
+README.md
+CHANGELOG.md

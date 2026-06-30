@@ -1,0 +1,17 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - alertbox-data:/app/data
+    environment:
+      PORT: "3000"
+      DATABASE_PATH: /app/data/alertbox.db
+      NODE_ENV: production
+      LOG_LEVEL: info
+
+volumes:
+  alertbox-data:

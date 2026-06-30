@@ -1,9 +1,14 @@
 node_modules/
-dist/
+**/node_modules/
+**/dist/
 .git/
 .gitignore
 .eslintcache
 *.local
+data/
 CLAUDE.md
 README.md
 CHANGELOG.md
+.env
+.env.*
+!.env.example

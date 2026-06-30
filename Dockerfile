@@ -2,12 +2,14 @@
 FROM --platform=$BUILDPLATFORM node:20-alpine AS builder
 WORKDIR /app
 COPY package.json package-lock.json* ./
+COPY backend/package.json ./backend/
+COPY admin/package.json ./admin/
 RUN npm install
-COPY index.html vite.config.ts tsconfig*.json ./
-COPY src ./src
-RUN npm run build
+COPY tsconfig.base.json ./
+COPY admin ./admin
+RUN npm run build -w admin
 
-# Runtime stage: amd64 container for deployment
+# Runtime stage: amd64 container for noVNC deployment
 FROM jlesage/baseimage-gui:ubuntu-20.04-v4
 
 ENV LC_ALL=C.UTF-8
@@ -95,8 +97,9 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     add-pkg nodejs && \
     npm install -g serve
 
-### Copy pre-built React app from build stage (avoids running esbuild under QEMU)
-COPY --from=builder /app/dist ./dist
+### Copy pre-built admin SPA from build stage (avoids running esbuild under QEMU)
+### startapp.sh serves /app/dist, so we place the admin build there
+COPY --from=builder /app/admin/dist ./dist
 
 ### Copy container filesystem overlays (noVNC UI, NVIDIA config, PulseAudio config)
 COPY rootfs/ /

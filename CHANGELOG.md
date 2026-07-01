@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Setup twitch event subscription specification template
 - Add twitch event client that digests incoming events and actions them
 - Add twitch event client bootstrap into wiring
+- Incoming events will be normalized for parsing and deduping
+- New alert queue that manages incoming events/alerts
+- Add gift aggregator so multi-gifts show as one alert.
 
 ### Changes
 

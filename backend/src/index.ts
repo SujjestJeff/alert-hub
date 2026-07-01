@@ -7,6 +7,9 @@ import { registerEventRoutes } from './routes/events.js';
 import { getBraodcasterId } from './twitch/helix.js';
 import { EventSubClient } from "./twitch/eventSubClient.js";
 import { tokenManager } from "./twitch/tokenManager.js";
+import { normalize } from "./alerts/normalize.js";
+import { AlertQueue } from "./alerts/alertQueue.js";
+import { GiftAggregator } from "./alerts/giftAggregator.js";
 
 const app = Fastify({ logger: { level: env.LOG_LEVEL } });
 
@@ -21,13 +24,28 @@ if (tokenManager.status().connected) {
   const eventsub = new EventSubClient(await getBraodcasterId());
 
   eventsub.on("connected", (id) => app.log.info(`[eventsub] session ${id}`));
-  eventsub.on("notification", (n) => app.log.info({ n }, `[eventsub] ${n.subscriptionType}`));
+  eventsub.on("notification", (n) => {
+    const alert = normalize(n);
+    if (alert) gifts.add(alert);
+  });
   eventsub.on("revocation", (s) => app.log.error({ s }, "[eventsub] subscription revoked"));
   eventsub.on("sub-error", (e) => app.log.error(e, "[eventsub] subscribe failed"));
 
   eventsub.start();
   tokenManager.on("needs-reauth", () => eventsub.stop());
 }
+
+
+const queue = new AlertQueue({ maxDurationMs: 8000, gapMs: 500 });
+
+queue.on("play", (a) => {
+  app.log.info({ a }, `[alert] ${a.kind} - ${a.displayName}`);
+  // TODO: Delete this line when overlay calls queue.markDone.
+  setTimeout(() => queue.markDone(a.id), 2000);
+})
+
+const gifts = new GiftAggregator(2000, (a) => queue.enqueue(a));
+
 
 
 try {

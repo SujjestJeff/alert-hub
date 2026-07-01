@@ -1,19 +1,16 @@
 import { env } from './env.js'
 import Fastify from 'fastify'
-import { openDatabase } from './db.js'
 import { registerHealthRoutes } from './health.js'
 import { registerStaticRoutes } from './static.js'
-import { registerAuthRoutes } from './routes/auth.js'
+import authRoutes from './routes/auth.js'
 import { registerEventRoutes } from './routes/events.js'
 
-const app = Fastify({ logger: { level: env.LOG_LEVEL } })
+const app = Fastify({ logger: { level: env.LOG_LEVEL } });
 
-openDatabase(env.DATABASE_PATH)
-
-registerHealthRoutes(app)
-registerAuthRoutes(app)
-registerEventRoutes(app)
-registerStaticRoutes(app)
+registerHealthRoutes(app);
+registerEventRoutes(app);
+registerStaticRoutes(app);
+await app.register(authRoutes);
 
 try {
   await app.listen({ port: env.PORT, host: '0.0.0.0' })

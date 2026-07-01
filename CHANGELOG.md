@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Create table tokens to hold user twitch access tokens 
+- Add token store for token crud operations
+- Create new token manager as single source of through for usable tokens
+
+### Changes
+
+- Replaces authentication route stub with actual endpoints
+
 ## [0.1.0] - 2026-06-26
 
 ### Added

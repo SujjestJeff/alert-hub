@@ -1,28 +1,25 @@
 import Database from 'better-sqlite3'
-import { mkdirSync } from 'fs'
-import { dirname, resolve } from 'path'
+import { mkdirSync } from 'node:fs'
+import { dirname } from 'node:path'
+import { env } from "./env.js"
 
-let _db: Database.Database | null = null
+mkdirSync(dirname(env.DATABASE_PATH), { recursive: true });
 
-export function openDatabase(path: string): Database.Database {
-  const absPath = resolve(path)
-  mkdirSync(dirname(absPath), { recursive: true })
+export const db = new Database(env.DATABASE_PATH);
 
-  const db = new Database(absPath)
-  db.pragma('journal_mode = WAL')
+db.pragma('journal_mode = WAL')
+db.pragma('foreign_keys = ON')
 
-  runMigrations(db)
-
-  _db = db
-  return db
-}
-
-export function getDatabase(): Database.Database {
-  if (!_db) throw new Error('Database not initialized — call openDatabase first')
-  return _db
-}
+runMigrations(db);
 
 function runMigrations(db: Database.Database): void {
-  // Episode N: replace this no-op with real migration steps
-  db.exec('SELECT 1')
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS tokens (
+      id            TEXT PRIMARY KEY,
+      access_token  TEXT NOT NULL,
+      refresh_token TEXT NOT NULL,
+      expires_at    INTEGER NOT NULL,
+      scopes        TEXT NOT NULL,
+      updated_at    INTEGER NOT NULL);
+  `);
 }

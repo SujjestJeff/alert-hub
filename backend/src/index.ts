@@ -3,7 +3,8 @@ import Fastify from 'fastify';
 import { registerHealthRoutes } from './health.js';
 import { registerStaticRoutes } from './static.js';
 import authRoutes from './routes/auth.js';
-import { registerEventRoutes } from './routes/events.js';
+import eventRoutes from './routes/events.js';
+import { SseHub } from "./overlay/sseHub.js";
 import { getBraodcasterId } from './twitch/helix.js';
 import { EventSubClient } from "./twitch/eventSubClient.js";
 import { tokenManager } from "./twitch/tokenManager.js";
@@ -12,11 +13,13 @@ import { AlertQueue } from "./alerts/alertQueue.js";
 import { GiftAggregator } from "./alerts/giftAggregator.js";
 
 const app = Fastify({ logger: { level: env.LOG_LEVEL } });
+const hub = new SseHub();
+const queue = new AlertQueue({ maxDurationMs: 8000, gapMs: 500 });
 
 registerHealthRoutes(app);
-registerEventRoutes(app);
 registerStaticRoutes(app);
 await app.register(authRoutes);
+await app.register(eventRoutes, { hub, queue });
 
 tokenManager.init();
 
@@ -35,18 +38,8 @@ if (tokenManager.status().connected) {
   tokenManager.on("needs-reauth", () => eventsub.stop());
 }
 
-
-const queue = new AlertQueue({ maxDurationMs: 8000, gapMs: 500 });
-
-queue.on("play", (a) => {
-  app.log.info({ a }, `[alert] ${a.kind} - ${a.displayName}`);
-  // TODO: Delete this line when overlay calls queue.markDone.
-  setTimeout(() => queue.markDone(a.id), 2000);
-})
-
+queue.on("play", (a) => hub.broadcast("alert", a));
 const gifts = new GiftAggregator(2000, (a) => queue.enqueue(a));
-
-
 
 try {
   await app.listen({ port: env.PORT, host: '0.0.0.0' })

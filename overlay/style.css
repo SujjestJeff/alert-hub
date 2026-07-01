@@ -8,12 +8,14 @@ html,
 body {
   background: transparent;
   overflow: hidden;
+  margin: 0;
+  height: 100%;
 }
 
-/* Episode 4-5: remove this marker once real alerts are wired up */
-.overlay-marker {
-  color: #9b59b6;
-  font-family: sans-serif;
-  font-size: 1.5rem;
-  padding: 1rem;
+#alert {
+  position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%);
+  font: 48px system-ui, sans-serif; color: #fff; text-align: center;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
+
+.hidden { display: none; }

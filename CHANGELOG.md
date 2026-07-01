@@ -19,10 +19,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Incoming events will be normalized for parsing and deduping
 - New alert queue that manages incoming events/alerts
 - Add gift aggregator so multi-gifts show as one alert.
+- Add SSE helpers for overlay messaging
+- Add broadcast hub that decouples the queue from the transport as one broadcast fans out
 
 ### Changes
 
 - Replaces authentication route stub with actual endpoints
+- Update overlay logic to pickup real SSE's
 
 ## [0.1.0] - 2026-06-26
 

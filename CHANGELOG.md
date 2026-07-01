@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add gift aggregator so multi-gifts show as one alert.
 - Add SSE helpers for overlay messaging
 - Add broadcast hub that decouples the queue from the transport as one broadcast fans out
+- Implement template variable substitution in overlay
+- Added state machine tracking alert state and done status in overlay
+- Added alert sound support
 
 ### Changes
 

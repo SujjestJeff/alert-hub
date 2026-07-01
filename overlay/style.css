@@ -12,10 +12,16 @@ body {
   height: 100%;
 }
 
-#alert {
-  position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%);
-  font: 48px system-ui, sans-serif; color: #fff; text-align: center;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+.alert {
+  position: absolute; left: 50%; top: 40%;
+  opacity: 0;                                 /* animation reveals it; prevents a pre-enter flash */
+  font: 700 52px system-ui, sans-serif; text-align: center;
+  padding: 0.4em 0.8em; border-radius: 16px;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.55);
 }
-
-.hidden { display: none; }
+.alert.hidden { display: none; }
+.alert.follow { color: #a6e3ff; }
+.alert.sub    { color: #ffd6a6; }
+.alert.gift   { color: #d6a6ff; }
+.alert.cheer  { color: #a6ffcb; }
+.alert.raid   { color: #ff9ea6; }

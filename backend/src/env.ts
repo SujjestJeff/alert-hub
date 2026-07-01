@@ -15,6 +15,7 @@ const schema = z.object({
   TWITCH_REDIRECT_URI: z.string().url(),
   TWITCH_BROADCASTER_LOGIN: z.string().optional(),
   LOG_LEVEL: z.string().default("INFO"),
+  EVENTSUB_WS_URL: z.string().url().optional(),
 })
 
 const parsed = schema.safeParse(process.env);

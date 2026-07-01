@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Create table tokens to hold user twitch access tokens 
 - Add token store for token crud operations
 - Create new token manager as single source of through for usable tokens
+- Add small wrapper that injects client-id & valid bearer token for helix calls
+- Setup twitch event subscription specification template
+- Add twitch event client that digests incoming events and actions them
+- Add twitch event client bootstrap into wiring
 
 ### Changes
 

@@ -5,7 +5,8 @@ import { createSoundPlayer } from "./sound.js";
 
 const token = new URLSearchParams(location.search).get("token") || "";
 const box = document.getElementById("alert");
-const config = DEFAULT_CONFIG;
+const STATIC_CLASS = { follow: "follow", subscription: "sub", resub: "sub", gift: "gift", cheer: "cheer", raid: "raid" };
+const config = {};
 const sound = createSoundPlayer(config);
 
 
@@ -41,7 +42,20 @@ const deps = {
 
 const source = new EventSource(`/events?token=${encodeURIComponent(token)}`);
 
+function mergeConfig(payload) {
+  const out = {};
+  for (const [kind, c] of Object.entries(payload.alerts)) {
+    out[kind] = { template: c.template, sound: c.sound, holdMs: c.holdMs, cssClass: STATIC_CLASS[kind] ?? "" };
+  }
+  return out;
+}
+
+const res = await fetch(`/overlay/config?token=${encodeURIComponent(token)}`);
+if (res.ok) config = mergeConfig(await res.json());
+
 source.addEventListener("alert", (e) => {
   const alert = JSON.parse(e.data);
   runAlertLifecycle(alert, config[alert.kind] ?? config.default, deps);
 });
+
+source.addEventListener("config", (e) => { config = mergeConfig(JSON.parse(e.data)); });

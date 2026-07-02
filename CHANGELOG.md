@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Setup twitch event subscription specification template
 - Add twitch event client that digests incoming events and actions them
 - Add twitch event client bootstrap into wiring
-- Incoming events will be normalized for parsing and deduping
+- Incoming events will be normalized for parsing and de-duping
 - New alert queue that manages incoming events/alerts
 - Add gift aggregator so multi-gifts show as one alert.
 - Add SSE helpers for overlay messaging
@@ -24,6 +24,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Implement template variable substitution in overlay
 - Added state machine tracking alert state and done status in overlay
 - Added alert sound support
+- Back-end now tracks a configuration schema and checks against it on every write
+- Config store manages SQLite JSON rows; in-memory cache; change signal
+- Registered the cookie plugin with `SESSION_SECRET` with preHandler guard
+- Begin verifying cookie signatures
+- Add admin routes (/admin/login, /admin/logout, /admin/api/config, /admin/api/config/:kind, /admin/api/settings)
+- Enable alerting rules based on unit counts (bits, count, months) depending on alert typescript-eslint
+- Overlay now leverages configuration on normalized
+- Admin pages now allow for login, config parsing, and config updates
+
 
 ### Changes
 

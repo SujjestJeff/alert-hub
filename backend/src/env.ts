@@ -17,6 +17,9 @@ const schema = z.object({
   LOG_LEVEL: z.string().default("INFO"),
   EVENTSUB_WS_URL: z.string().url().optional(),
   OVERLAY_TOKEN: z.string().optional(),
+  SESSION_SECRET: z.string().optional(),
+  ADMIN_PASSWORD: z.string().optional(),
+  NODE_ENV: z.string().optional(),
 })
 
 const parsed = schema.safeParse(process.env);

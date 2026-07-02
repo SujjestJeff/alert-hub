@@ -1,6 +1,8 @@
 import { env } from './env.js';
 import Fastify from 'fastify';
 import cookie from "@fastify/cookie";
+import fastifyStatic from "@fastify/static";
+import { join } from "node:path";
 import { registerHealthRoutes } from './health.js';
 import { registerStaticRoutes } from './static.js';
 import adminRoutes from "./routes/admin.js";
@@ -25,17 +27,30 @@ function fireTest(kind: AlertKind) {
   gifts.add(alert);
 }
 
+const eventsub = new EventSubClient(await getBraodcasterId());
 configStore.init();
 const app = Fastify({ logger: { level: env.LOG_LEVEL } });
 const hub = new SseHub();
 const queue = new AlertQueue({ maxDurationMs: 8000, gapMs: 500 });
 
-registerHealthRoutes(app);
+if (env.NODE_ENV === "production") {
+  await app.register(fastifyStatic, { root: join(process.cwd(), "overlay"), prefix: "/overlay/" });
+  await app.register(fastifyStatic, { root: join(process.cwd(), "admin/dist"), prefix: "/", decorateReply: false });
+  app.setNotFoundHandler((req, reply) => {
+    if (req.method === "GET" && !req.url.startsWith("/admin/api") && !req.url.startsWith("/auth")
+      && !req.url.startsWith("/events") && !req.url.startsWith("/overlay")) {
+      return reply.sendFile("index.html", join(process.cwd(), "admin/dist"));
+    }
+    reply.code(404).send({ error: "not found" });
+  });
+}
+
+registerHealthRoutes(app, eventsub);
 registerStaticRoutes(app);
 await app.register(authRoutes);
 await app.register(eventRoutes, { hub, queue });
 await app.register(cookie, { secret: env.SESSION_SECRET });
-await app.register(adminRoutes, { fireTest });
+await app.register(adminRoutes, { fireTest, eventsub, hub, lastEventAt: () => lastEventAt });
 
 app.get("/overlay/config", (req, reply) => {
   const { token } = req.query as Record<string, string>;
@@ -45,8 +60,9 @@ app.get("/overlay/config", (req, reply) => {
 
 tokenManager.init();
 
+let lastEventAt: number | null = null;
+
 if (tokenManager.status().connected) {
-  const eventsub = new EventSubClient(await getBraodcasterId());
 
   eventsub.on("connected", (id) => app.log.info(`[eventsub] session ${id}`));
   eventsub.on("notification", (n) => {
@@ -58,9 +74,11 @@ if (tokenManager.status().connected) {
   });
   eventsub.on("revocation", (s) => app.log.error({ s }, "[eventsub] subscription revoked"));
   eventsub.on("sub-error", (e) => app.log.error(e, "[eventsub] subscribe failed"));
+  eventsub.on("notification", () => { lastEventAt = Date.now(); });
 
   eventsub.start();
   tokenManager.on("needs-reauth", () => eventsub.stop());
+  tokenManager.on("connected", () => { if (eventsub.state === "stopped") eventsub.start(); });
 }
 
 configStore.on("changed", () => hub.broadcast("config", configStore.getAll()));

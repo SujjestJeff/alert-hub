@@ -35,6 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add live preview mode in admin app
 - Implement test triggers for visibility in live preview mode
 - Tie together all the vitest configs at root level
+- New status view added into admin interface
+- Readme updated with bootstrap instructions
 
 
 ### Changes

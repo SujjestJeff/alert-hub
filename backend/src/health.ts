@@ -1,9 +1,10 @@
 import type { FastifyInstance } from 'fastify'
+import { tokenManager } from './twitch/tokenManager.js';
 
-export function registerHealthRoutes(app: FastifyInstance): void {
+export function registerHealthRoutes(app: FastifyInstance, eventsub: any): void {
   app.get('/health', async () => ({
-    status: 'ok',
-    version: process.env.npm_package_version ?? '0.1.0',
-    uptime: Math.floor(process.uptime()),
-  }))
+    ok: true,
+    twitch: tokenManager.status().connected,
+    eventsub: eventsub.state,
+  }));
 }

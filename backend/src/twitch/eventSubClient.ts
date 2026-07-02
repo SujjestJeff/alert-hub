@@ -3,12 +3,14 @@ import WebSocket from "ws";
 import { env } from "../env.js";
 import { createSubscription } from "./helix.js";
 import { desiredSubscriptions } from "./subscriptions.js";
+import { createBackoff } from "./backoff.js";
+import { dedupeStore } from "./dedupeStore.js";
 
 const WS_URL = env.EVENTSUB_WS_URL ?? "wss://eventsub.wss.twitch.tv/ws";
 const KEEPALIVE_GRACE_MS = 10_000;
-const BASE_BACKOFF_MS = 1_000;
-const MAX_BACKOFF_MS = 60_000;
 const DEDUPE_TTL_MS = 10 * 60_000;
+
+type EventSubState = "connecting" | "connected" | "reconnecting" | "stopped";
 
 interface Metadata {
   message_id: string;
@@ -33,24 +35,30 @@ export interface NormalizedNotification {
 
 export class EventSubClient extends EventEmitter {
   private ws?: WebSocket;
-  private sessionId?: string;
+  private _sessionId?: string;
   private keepaliveTimer?: NodeJS.Timeout;
   private currentTimeoutMs = 20_000;
-  private backoff = BASE_BACKOFF_MS;
+  private backoff = createBackoff({ base: 1_000, max: 60_000, factor: 2 });
   private closedByUs = false;
   private seen = new Map<string, number>();
+  private _state: EventSubState = "stopped";
+  get state(): EventSubState { return this._state; }
+  get sessionId(): string | undefined { return this._sessionId; }
 
   constructor(private broadcasterId: string) { super(); }
 
   start(): void {
     this.closedByUs = false;
     this.connect(WS_URL, false);
+    this._state = "connecting";
+    setInterval(() => dedupeStore.prune(), 60_000);
   }
 
   stop(): void {
     this.closedByUs = true;
     clearTimeout(this.keepaliveTimer);
     this.ws?.close();
+    this._state = "stopped";
   }
 
   private connect(url: string, isMigration: boolean): void {
@@ -78,23 +86,25 @@ export class EventSubClient extends EventEmitter {
   }
 
   private async onWelcome(payload: SessionPayload, socket: WebSocket, isMigration: boolean): Promise<void> {
-    this.sessionId = payload.session.id;
+    this._sessionId = payload.session.id;
     this.currentTimeoutMs = (payload.session.keepalive_timeout_seconds ?? 10) * 1000 + KEEPALIVE_GRACE_MS;
     this.resetKeepalive();
-    this.backoff = BASE_BACKOFF_MS;
+    this.backoff.reset();
 
     const old = this.ws;
     this.ws = socket;
-    this.emit("connected", this.sessionId);
+    this.emit("connected", this._sessionId);
 
     old?.close();
     if (!isMigration) await this.subscribeAll();
+    this._state = "connected";
   }
 
   private onReconnect(payload: SessionPayload): void {
     const url = payload.session.reconnect_url;
     if (!url) return;
     this.connect(url, true);
+    this._state = "reconnecting";
   }
 
   private onNotification(metadata: Metadata, payload: NotificationPayload): void {
@@ -110,10 +120,10 @@ export class EventSubClient extends EventEmitter {
   }
 
   private async subscribeAll(): Promise<void> {
-    if (!this.sessionId) return;
+    if (!this._sessionId) return;
     for (const spec of desiredSubscriptions(this.broadcasterId)) {
       try {
-        const status = await createSubscription(spec, this.sessionId);
+        const status = await createSubscription(spec, this._sessionId);
         if (status !== "enabled") this.emit("sub-warning", { spec, status });
       } catch (err) {
         this.emit("sub-error", { spec, err });
@@ -129,10 +139,8 @@ export class EventSubClient extends EventEmitter {
   }
 
   private scheduleReconnect(): void {
-    const jitter = Math.random() * 0.3 * this.backoff;
-    const delay = Math.min(this.backoff, MAX_BACKOFF_MS) + jitter;
-    setTimeout(() => this.connect(WS_URL, false), delay);
-    this.backoff = Math.min(this.backoff * 2, MAX_BACKOFF_MS);
+    this._state = "reconnecting";
+    setTimeout(() => this.connect(WS_URL, false), this.backoff.next());
   }
 
   private resetKeepalive(): void {
@@ -143,12 +151,8 @@ export class EventSubClient extends EventEmitter {
   private isDuplicate(metadata: Metadata): boolean {
     const ts = Date.parse(metadata.message_timestamp);
     if (Number.isFinite(ts) && Date.now() - ts > DEDUPE_TTL_MS) return true;
-    if (this.seen.has(metadata.message_id)) return true;
-    this.seen.set(metadata.message_id, Date.now());
-    if (this.seen.size > 1000) {
-      const cutoff = Date.now() - DEDUPE_TTL_MS;
-      for (const [id, t] of this.seen) if (t < cutoff) this.seen.delete(id);
-    }
+    if (dedupeStore.has(metadata.message_id)) return true;
+    dedupeStore.add(metadata.message_id);
     return false;
   }
 }

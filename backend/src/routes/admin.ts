@@ -1,9 +1,19 @@
 import type { FastifyInstance } from "fastify";
+import type { EventSubClient } from "../twitch/eventSubClient.js";
+import type { SseHub } from "../overlay/sseHub.js";
 import { timingSafeEqual } from "node:crypto";
 import { env } from "../env.js";
 import { configStore } from "../config/configStore.js";
 import { ALERT_KINDS, type AlertKind } from "../config/schema.js";
 import { requireAdmin, ADMIN_COOKIE } from "./adminAuth.js";
+import { makeStatusSnapshot } from "../status/statusService.js";
+
+interface AdminRoutesOpts {
+  fireTest: (kind: AlertKind) => void;
+  eventsub: EventSubClient;
+  hub: SseHub;
+  lastEventAt: () => number | null;
+}
 
 function passwordOk(input: unknown): boolean {
   if (typeof input !== "string" || !env.ADMIN_PASSWORD) return false;
@@ -11,7 +21,7 @@ function passwordOk(input: unknown): boolean {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-export default async function adminRoutes(app: FastifyInstance, opts: { fireTest: (kind: AlertKind) => void }) {
+export default async function adminRoutes(app: FastifyInstance, opts: AdminRoutesOpts) {
   app.post("/admin/login", async (req, reply) => {
     const { password } = (req.body ?? {}) as { password?: string };
     if (!passwordOk(password)) return reply.code(401).send({ error: "bad password" });
@@ -50,4 +60,7 @@ export default async function adminRoutes(app: FastifyInstance, opts: { fireTest
     opts.fireTest(kind as AlertKind)
     return { ok: true };
   });
+
+  app.get("/admin/api/status", { preHandler: requireAdmin }, async () =>
+    makeStatusSnapshot(opts.eventsub, opts.hub, opts.lastEventAt()));
 }

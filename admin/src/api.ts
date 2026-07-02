@@ -34,3 +34,5 @@ export const fireTestAlert = (kind: string) =>
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ kind }),
   }).then(json);
+
+export const getStatus = () => fetch("/admin/api/status", { credentials: "include" }).then(json);

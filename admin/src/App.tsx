@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from "react";
 import { getConfig, login, Unauthorized } from "./api";
 import { AlertPreview, type PreviewHandle } from "./AlertPreview";
 import { ConfigEditor } from "./ConfigEditor";
+import { StatusBar } from "./StatusBar";
 
 export default function App() {
   const [authed, setAuthed] = useState<boolean | null>(null);
@@ -18,6 +19,7 @@ export default function App() {
   const previewRef = useRef<PreviewHandle>(null);
   return (
     <div className="layout">
+      <StatusBar />
       <ConfigEditor config={config} onChange={setConfig} previewRef={previewRef} />
       <AlertPreview ref={previewRef} />
     </div>

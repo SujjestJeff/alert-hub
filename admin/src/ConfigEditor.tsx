@@ -1,21 +1,22 @@
 import { useState } from "react";
-import { saveAlert } from "./api";
+import { saveAlert, fireTestAlert } from "./api";
 
 const KINDS = ["follow", "subscription", "resub", "gift", "cheer", "raid"] as const;
 
-export function ConfigEditor({ config, onChange }: { config: any; onChange: (c: any) => void }) {
+export function ConfigEditor({ config, onChange, previewRef }: { config: any; onChange: (c: any) => void; previewRef: any }) {
   return (
     <div className="editor">
       <h1>Alerts</h1>
       {KINDS.map((k) => (
         <AlertCard key={k} kind={k} value={config.alerts[k]}
-          onSaved={(next: any) => onChange({ ...config, alerts: { ...config.alerts, [k]: next } })} />
+          onSaved={(next: any) => onChange({ ...config, alerts: { ...config.alerts, [k]: next } })}
+          previewRef={previewRef} />
       ))}
     </div>
   );
 }
 
-function AlertCard({ kind, value, onSaved }: { kind: string; value: any; onSaved: (v: any) => void }) {
+function AlertCard({ kind, value, onSaved, previewRef }: { kind: string; value: any; onSaved: (v: any) => void; previewRef: any; }) {
   const [draft, setDraft] = useState(value);
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [error, setError] = useState("");
@@ -43,6 +44,8 @@ function AlertCard({ kind, value, onSaved }: { kind: string; value: any; onSaved
       <button onClick={save} disabled={status === "saving"}>
         {status === "saving" ? "Saving..." : status === "saved" ? "Saved!" : "Save"}
       </button>
+      <button onClick={() => previewRef.current?.previewDraft(kind, draft)}>Preview (draft)</button>
+      <button onClick={() => fireTestAlert(kind)}>Fire test (live to OBS)</button>
       {status === "error" && <p className="error">{error}</p>}
     </section>
   );

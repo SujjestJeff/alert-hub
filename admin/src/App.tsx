@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import { getConfig, login, Unauthorized } from "./api";
+import { AlertPreview, type PreviewHandle } from "./AlertPreview";
 import { ConfigEditor } from "./ConfigEditor";
 
 export default function App() {
@@ -14,7 +15,13 @@ export default function App() {
 
   if (authed === null) return <p>Loading...</p>;
   if (!authed) return <Login onSuccess={load} />;
-  return <ConfigEditor config={config} onChange={setConfig} />;
+  const previewRef = useRef<PreviewHandle>(null);
+  return (
+    <div className="layout">
+      <ConfigEditor config={config} onChange={setConfig} previewRef={previewRef} />
+      <AlertPreview ref={previewRef} />
+    </div>
+  );
 }
 
 function Login({ onSuccess }: { onSuccess: () => void }) {

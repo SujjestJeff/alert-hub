@@ -21,3 +21,16 @@ export const saveAlert = (kind: string, patch: unknown) =>
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(patch),
   }).then(json);
+
+export const getOverlayToken = () =>
+  fetch("/admin/api/overlay-token", { credentials: "include" }).then(json);
+
+export const getOverlayConfig = (token: string) =>
+  fetch(`/overlay/config?token=${encodeURIComponent(token)}`).then((r) => r.json());
+
+export const fireTestAlert = (kind: string) =>
+  fetch("/admin/api/test-alert", {
+    method: "POST", credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ kind }),
+  }).then(json);

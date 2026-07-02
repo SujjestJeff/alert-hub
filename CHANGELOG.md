@@ -32,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enable alerting rules based on unit counts (bits, count, months) depending on alert typescript-eslint
 - Overlay now leverages configuration on normalized
 - Admin pages now allow for login, config parsing, and config updates
+- Add live preview mode in admin app
+- Implement test triggers for visibility in live preview mode
+- Tie together all the vitest configs at root level
 
 
 ### Changes

@@ -1,61 +1,31 @@
-import { applyTemplate } from "./template.js";
 import { DEFAULT_CONFIG } from "./config.js";
-import { runAlertLifecycle } from "./lifecycle.js";
 import { createSoundPlayer } from "./sound.js";
+import { createDomRenderer } from "./renderer.js";
+import { KIND_CLASS } from "./kinds.js";
 
 const token = new URLSearchParams(location.search).get("token") || "";
 const box = document.getElementById("alert");
-const STATIC_CLASS = { follow: "follow", subscription: "sub", resub: "sub", gift: "gift", cheer: "cheer", raid: "raid" };
-const config = {};
-const sound = createSoundPlayer(config);
-
-
-const ENTER = [
-  { opacity: 0, transform: "translate(-50%, -30%) scale(0.9)" },
-  { opacity: 1, transform: "translate(-50%, -50%) scale(1)" },
-];
-const EXIT = [
-  { opacity: 1, transform: "translate(-50%, -50%) sclae(1)" },
-  { opacity: 0, transform: "translate(-50%, -60%) scale(0.98)" },
-];
-const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-
-
-const deps = {
-  setContent: (alert, cfg) => {
-    box.textContent = applyTemplate(cfg.template, alert);
-    box.className = `alert ${cfg.cssClass}`;
-  },
-  playSound: (src) => sound.play(src),
-  animateEnter: () => box.animate(ENTER, { duration: 400, easing: "cubic-bezier(.2,.8,.2,1)", fill: "forwards" }).finished,
-  hold: (ms) => wait(ms),
-  animateExit: () => box.animate(EXIT, { duration: 400, easing: "ease-in", fill: "forwards" }).finished,
-  reportDone: (id) => {
-    box.className = "alert hidden";
-    fetch(`/events/done?token=${encodeURIComponent(token)}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    }).catch(() => { });
-  },
-};
-
-const source = new EventSource(`/events?token=${encodeURIComponent(token)}`);
+let config = {};
 
 function mergeConfig(payload) {
   const out = {};
   for (const [kind, c] of Object.entries(payload.alerts)) {
-    out[kind] = { template: c.template, sound: c.sound, holdMs: c.holdMs, cssClass: STATIC_CLASS[kind] ?? "" };
+    out[kind] = { template: c.template, sound: c.sound, holdMs: c.holdMs, cssClass: KIND_CLASS[kind] ?? "" };
   }
   return out;
 }
 
-const res = await fetch(`/overlay/config?token=${encodeURIComponent(token)}`);
-if (res.ok) config = mergeConfig(await res.json());
-
-source.addEventListener("alert", (e) => {
-  const alert = JSON.parse(e.data);
-  runAlertLifecycle(alert, config[alert.kind] ?? config.default, deps);
+const sound = createSoundPlayer(DEFAULT_CONFIG);
+const play = createDomRenderer(box, {
+  playSound: (src) => sound.play(src),
+  onDone: (id) => fetch(`/events/done?token=${encodeURIComponent(token)}`, {
+    method: "POST", headers: { "Content-Type": "application.json" }, body: JSON.stringify({ id }),
+  }).catch(() => { }),
 });
 
+const cfgRes = await fetch(`/overlay/config?token=${encodeURIComponent(token)}`);
+if (cfgRes.ok) config = mergeConfig(await cfgRes.json());
+
+const source = new EventSource(`/events?token=${encodeURIComponent(token)}`);
+source.addEventListener("alert", (e) => { const a = JSON.parse(e.data); play(a, config[a.kind] ?? config.follow); });
 source.addEventListener("config", (e) => { config = mergeConfig(JSON.parse(e.data)); });

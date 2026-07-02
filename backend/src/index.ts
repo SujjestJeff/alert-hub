@@ -16,6 +16,14 @@ import { GiftAggregator } from "./alerts/giftAggregator.js";
 import { configStore } from "./config/configStore.js";
 import { shouldAlert } from "./alerts/shouldAlert.js";
 import { checkOverlayToken } from "./overlay/sse.js";
+import { makeSyntheticAlert } from './alerts/synthetic.js';
+import { AlertKind } from './config/schema.js';
+
+function fireTest(kind: AlertKind) {
+  const alert = makeSyntheticAlert(kind);
+  app.log.info({ id: alert.id, kind }, "[test] synthetic alert");
+  gifts.add(alert);
+}
 
 configStore.init();
 const app = Fastify({ logger: { level: env.LOG_LEVEL } });
@@ -27,7 +35,7 @@ registerStaticRoutes(app);
 await app.register(authRoutes);
 await app.register(eventRoutes, { hub, queue });
 await app.register(cookie, { secret: env.SESSION_SECRET });
-await app.register(adminRoutes);
+await app.register(adminRoutes, { fireTest });
 
 app.get("/overlay/config", (req, reply) => {
   const { token } = req.query as Record<string, string>;

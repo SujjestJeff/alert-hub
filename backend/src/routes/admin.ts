@@ -11,7 +11,7 @@ function passwordOk(input: unknown): boolean {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-export default async function adminRoutes(app: FastifyInstance) {
+export default async function adminRoutes(app: FastifyInstance, opts: { fireTest: (kind: AlertKind) => void }) {
   app.post("/admin/login", async (req, reply) => {
     const { password } = (req.body ?? {}) as { password?: string };
     if (!passwordOk(password)) return reply.code(401).send({ error: "bad password" });
@@ -28,7 +28,7 @@ export default async function adminRoutes(app: FastifyInstance) {
     return { ok: true };
   })
 
-  app.get(".admin/api/config", { preHandler: requireAdmin }, async () => configStore.getAll());
+  app.get("/admin/api/config", { preHandler: requireAdmin }, async () => configStore.getAll());
 
   app.put("/admin/api/config/:kind", { preHandler: requireAdmin }, async (req, reply) => {
     const { kind } = req.params as { kind: string };
@@ -40,5 +40,14 @@ export default async function adminRoutes(app: FastifyInstance) {
   app.put("/admin/api/settings", { preHandler: requireAdmin }, async (req, reply) => {
     try { return configStore.updateSettings(req.body); }
     catch (err) { return reply.code(400).send({ error: "invalid settings", detail: String(err) }); }
+  });
+
+  app.get("/admin/api/overlay-token", { preHandler: requireAdmin }, async () => ({ token: env.OVERLAY_TOKEN ?? "" }));
+
+  app.post("/admin/api/test-alert", { preHandler: requireAdmin }, async (req, reply) => {
+    const { kind } = (req.body ?? {}) as { kind?: string };
+    if (!kind || !ALERT_KINDS.includes(kind as AlertKind)) return reply.code(400).send({ error: "unknown kind" });
+    opts.fireTest(kind as AlertKind)
+    return { ok: true };
   });
 }

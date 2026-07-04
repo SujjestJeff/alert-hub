@@ -6,6 +6,7 @@ import { registerStaticRoutes } from './static.js';
 import adminRoutes from "./routes/admin.js";
 import authRoutes from './routes/auth.js';
 import eventRoutes from './routes/events.js';
+import overlayRoutes from "./routes/overlay.js"
 import { SseHub } from "./overlay/sseHub.js";
 import { getBroadcasterId } from './twitch/helix.js';
 import { EventSubClient } from "./twitch/eventSubClient.js";
@@ -15,9 +16,21 @@ import { AlertQueue } from "./alerts/alertQueue.js";
 import { GiftAggregator } from "./alerts/giftAggregator.js";
 import { configStore } from "./config/configStore.js";
 import { shouldAlert } from "./alerts/shouldAlert.js";
-import { checkOverlayToken } from "./overlay/sse.js";
 import { makeSyntheticAlert } from './alerts/synthetic.js';
 import { AlertKind } from './config/schema.js';
+
+const eventsub = new EventSubClient(() => getBroadcasterId());
+const app = Fastify({ logger: { level: env.LOG_LEVEL } });
+const hub = new SseHub();
+const queue = new AlertQueue({ maxDurationMs: 8000, gapMs: 500 });
+const gifts = new GiftAggregator(2000, (a) => queue.enqueue(a));
+let lastEventAt: number | null = null;
+
+tokenManager.init();
+configStore.init();
+
+configStore.on("changed", () => hub.broadcast("config", configStore.getAll()));
+queue.on("play", (a) => hub.broadcast("alert", a));
 
 function fireTest(kind: AlertKind) {
   const alert = makeSyntheticAlert(kind);
@@ -25,56 +38,34 @@ function fireTest(kind: AlertKind) {
   gifts.add(alert);
 }
 
-tokenManager.init();
-configStore.init();
-const eventsub = new EventSubClient(() => getBroadcasterId());
-const app = Fastify({ logger: { level: env.LOG_LEVEL } });
-const hub = new SseHub();
-const queue = new AlertQueue({ maxDurationMs: 8000, gapMs: 500 });
-
 registerStaticRoutes(app);
-
 registerHealthRoutes(app, eventsub);
 await app.register(authRoutes);
 await app.register(eventRoutes, { hub, queue });
 await app.register(cookie, { secret: env.SESSION_SECRET });
 await app.register(adminRoutes, { fireTest, eventsub, hub, lastEventAt: () => lastEventAt });
+await app.register(overlayRoutes);
 
-app.get("/overlay/config", (req, reply) => {
-  const { token } = req.query as Record<string, string>;
-  if (!checkOverlayToken(token)) return reply.code(401).send("unauthorized");
-  return configStore.getAll();
+eventsub.on("connected", (id) => app.log.info(`[eventsub] session ${id}`));
+eventsub.on("notification", (n) => {
+  const alert = normalize(n);
+  if (!alert) return;
+  const cfg = configStore.getAlert(alert.kind);
+  if (!cfg || !shouldAlert(alert, cfg)) return;
+  gifts.add(alert);
 });
+eventsub.on("revocation", (s) => app.log.error({ s }, "[eventsub] subscription revoked"));
+eventsub.on("sub-error", (e) => app.log.error(e, "[eventsub] subscribe failed"));
+eventsub.on("notification", () => { lastEventAt = Date.now(); });
 
-
-let lastEventAt: number | null = null;
-
+tokenManager.on("needs-reauth", () => eventsub.stop());
+tokenManager.on("connected", () => { if (eventsub.state === "stopped") eventsub.start(); });
 if (tokenManager.status().connected) {
-
-  eventsub.on("connected", (id) => app.log.info(`[eventsub] session ${id}`));
-  eventsub.on("notification", (n) => {
-    const alert = normalize(n);
-    if (!alert) return;
-    const cfg = configStore.getAlert(alert.kind);
-    if (!cfg || !shouldAlert(alert, cfg)) return;
-    gifts.add(alert);
-  });
-  eventsub.on("revocation", (s) => app.log.error({ s }, "[eventsub] subscription revoked"));
-  eventsub.on("sub-error", (e) => app.log.error(e, "[eventsub] subscribe failed"));
-  eventsub.on("notification", () => { lastEventAt = Date.now(); });
-
   eventsub.start();
-  tokenManager.on("needs-reauth", () => eventsub.stop());
-  tokenManager.on("connected", () => { if (eventsub.state === "stopped") eventsub.start(); });
 }
 
-configStore.on("changed", () => hub.broadcast("config", configStore.getAll()));
-
-queue.on("play", (a) => hub.broadcast("alert", a));
-const gifts = new GiftAggregator(2000, (a) => queue.enqueue(a));
-
 try {
-  await app.listen({ port: env.PORT, host: '0.0.0.0' })
+  await app.listen({ port: env.PORT, host: "0.0.0.0" })
 } catch (err) {
   app.log.error(err)
   process.exit(1)

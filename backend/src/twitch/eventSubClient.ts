@@ -41,6 +41,7 @@ export class EventSubClient extends EventEmitter {
   private backoff = createBackoff({ base: 1_000, max: 60_000, factor: 2 });
   private closedByUs = false;
   private _state: EventSubState = "stopped";
+  private _pruneInterval: ReturnType<typeof setInterval> | undefined = undefined;
   get state(): EventSubState { return this._state; }
   get sessionId(): string | undefined { return this._sessionId; }
 
@@ -50,12 +51,13 @@ export class EventSubClient extends EventEmitter {
     this.closedByUs = false;
     this.connect(WS_URL, false);
     this._state = "connecting";
-    setInterval(() => dedupeStore.prune(), 60_000);
+    this._pruneInterval = setInterval(() => dedupeStore.prune(), 60_000);
   }
 
   stop(): void {
     this.closedByUs = true;
     clearTimeout(this.keepaliveTimer);
+    clearInterval(this._pruneInterval);
     this.ws?.close();
     this._state = "stopped";
   }
@@ -115,12 +117,20 @@ export class EventSubClient extends EventEmitter {
   }
 
   private onRevocation(payload: NotificationPayload): void {
+    // TODO: We need to handle resubscribe here eventually
     this.emit("revocation", payload.subscription);
   }
 
   private async subscribeAll(): Promise<void> {
     if (!this._sessionId) return;
-    const broadcasterId = await this.getBroadcasterId();
+
+    let broadcasterId: string;
+    try {
+      broadcasterId = await this.getBroadcasterId();
+    } catch (err) {
+      this.emit("broadcaster-id-error", err)
+      return;
+    }
     for (const spec of desiredSubscriptions(broadcasterId)) {
       try {
         const status = await createSubscription(spec, this._sessionId);

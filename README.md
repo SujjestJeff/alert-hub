@@ -37,7 +37,7 @@ No third-party overlay service. No account on someone else's site. No "we've upd
 
 ```bash
 git clone https://github.com/SujjestJeff/alert-hub.git
-cd alertbox
+cd alert-hub
 cp .env.example .env
 # open .env and fill it in — see Configuration below
 docker compose up -d
@@ -82,11 +82,12 @@ Copy `.env.example` to `.env` and fill it in.
 | `TWITCH_CLIENT_ID`         | **yes**  | From your Twitch app.                                                               |
 | `TWITCH_CLIENT_SECRET`     | **yes**  | From your Twitch app. Keep it secret. Keep it safe.                                 |
 | `TWITCH_REDIRECT_URI`      | **yes**  | Must match your app's Redirect URL exactly.                                         |
-| `TWITCH_BROADCASTER_LOGIN` | **yes**  | Your channel login name (the one in your URL, lowercase).                           |
+| `TWITCH_BROADCASTER_LOGIN` | no       | Not currently read by the backend (the broadcaster is resolved from your token instead) — safe to leave blank. |
 | `ADMIN_PASSWORD`           | **yes**  | Password for the config panel. Make it not-`password`.                              |
 | `SESSION_SECRET`           | **yes**  | Random string used to sign the admin login cookie.                                  |
 | `OVERLAY_TOKEN`            | **yes**  | Random string that gates your overlay URL so randos can't hijack it.                |
 | `EVENTSUB_WS_URL`          | no       | Only for pointing at the Twitch CLI mock server during development. Leave it unset. |
+| `LOG_LEVEL`                | no       | `fatal` \| `error` \| `warn` \| `info` \| `debug` \| `trace`. Default `info`.        |
 | `NODE_ENV`                 | no       | `production` in Docker. Also flips the login cookie to `secure`.                    |
 
 Generate the random ones however you like; this works:
@@ -188,7 +189,7 @@ And once you're on HTTPS, set `NODE_ENV=production` so the admin cookie goes `se
 
 ## Troubleshooting
 
-**No alerts showing up.** Check the status bar at the top of the admin panel — three dots tell you whether **Twitch**, **EventSub**, and your **overlay** are each connected. Also hit `http://localhost:3000/health` for a quick pulse. If Twitch is red, your token probably expired — click **Reconnect Twitch**.
+**No alerts showing up.** Check the status bar at the top of the admin panel — dots for **Twitch** and **EventSub** show whether each is connected, plus a live count of connected **overlays** and how long ago the last event landed. Also hit `http://localhost:3000/health` for a quick pulse. If Twitch is red, your token probably expired — click **Reconnect Twitch**.
 
 **Alerts fire but there's no sound.** Enable **Control Audio via OBS** on the browser source. If the _first_ alert of a session is silent but the rest are fine, that's OBS not preloading — it usually sorts itself out after the first one; a source refresh helps.
 

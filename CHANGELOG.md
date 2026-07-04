@@ -9,39 +9,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Create table tokens to hold user twitch access tokens
-- Add token store for token crud operations
-- Create new token manager as single source of through for usable tokens
-- Add small wrapper that injects client-id & valid bearer token for helix calls
-- Setup twitch event subscription specification template
-- Add twitch event client that digests incoming events and actions them
-- Add twitch event client bootstrap into wiring
-- Incoming events will be normalized for parsing and de-duping
-- New alert queue that manages incoming events/alerts
-- Add gift aggregator so multi-gifts show as one alert.
-- Add SSE helpers for overlay messaging
-- Add broadcast hub that decouples the queue from the transport as one broadcast fans out
-- Implement template variable substitution in overlay
-- Added state machine tracking alert state and done status in overlay
-- Added alert sound support
+- Table tokens to hold user twitch access tokens
+- Token store for token crud operations
+- New token manager as single source of through for usable tokens
+- Small wrapper that injects client-id & valid bearer token for helix calls
+- Twitch event subscription specification template
+- Twitch event client that digests incoming events and actions them
+- Twitch event client bootstrap into wiring
+- Incoming event normalizer for parsing and de-duping
+- Alert queue that manages incoming events/alerts
+- Gift aggregator so multi-gifts show as one alert.
+- SSE helpers for overlay messaging
+- Broadcast hub that decouples the queue from the transport as one broadcast fans out
+- Template variable substitution in overlay
+- State machine tracking alert state and done status in overlay
+- Alert sound support
 - Back-end now tracks a configuration schema and checks against it on every write
 - Config store manages SQLite JSON rows; in-memory cache; change signal
 - Registered the cookie plugin with `SESSION_SECRET` with preHandler guard
 - Begin verifying cookie signatures
-- Add admin routes (/admin/login, /admin/logout, /admin/api/config, /admin/api/config/:kind, /admin/api/settings)
-- Enable alerting rules based on unit counts (bits, count, months) depending on alert typescript-eslint
+- Admin routes (/admin/login, /admin/logout, /admin/api/config, /admin/api/config/:kind, /admin/api/settings)
+- Alerting rules based on unit counts (bits, count, months)
 - Overlay now leverages configuration on normalized
 - Admin pages now allow for login, config parsing, and config updates
-- Add live preview mode in admin app
-- Implement test triggers for visibility in live preview mode
-- Tie together all the vitest configs at root level
-- New status view added into admin interface
-- Readme updated with bootstrap instructions
+- Live preview mode in admin app
+- Test triggers for visibility in live preview mode
+- Tied together all the vitest configs at root level
+- Exponential-backoff reconnect for the EventSub Websocket
+- A persistent (SQLite backed) message-dedupe store, replacing an in-memory map (survives restarts now)
+- Auto-restart of EventSub when the token manager reports a fresh connection
+- Readme bootstrap instructions
 
-### Changes
+### Changed
 
-- Replaces authentication route stub with actual endpoints
+- Replaced authentication route stub with actual endpoints
 - Update overlay logic to pickup real SSE's
+- /health response shape changed from {status, version, uptime} to {ok, twitch, eventsub}
+- Production static-file serving (admin-api + overlay served from backend with SPA fallback routing) was reworked into registerStaticRoutes
+- Extracted /overlay/config into its own routes/overlay.ts (was inline in index.ts)
+- Dockerfile now builds a slim Node runtime image directly (backend + admin SPA + overlay in one container); the previous jlesage/baseimage-gui/noVNC image is preserved as Dockerfile.jumproom but is no longer the default build
+- Service simplified to a single alertbox container with env_file, restart: unless-stopped, and volume mount moved from /app/data to /data.
+
+### Fixed
+
+- dedupeStore.prune()'s interval is now stored and cleared on stop()
+- EventSub awaiting getBroadcasterId() at the module level potentially crashes the process if Helix fails or the user isn't authenticated; It now resolves lazily and emits broadcaster-id-error instead of throwing
 
 ## [0.1.0] - 2026-06-26
 

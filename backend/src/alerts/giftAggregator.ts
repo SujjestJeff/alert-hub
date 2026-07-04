@@ -11,6 +11,10 @@ export class GiftAggregator {
     private flush: (a: NormalizedAlert) => void,
   ) {}
 
+  updateWindowMs(ms: number): void {
+    this.windowMs = ms;
+  }
+
   add(alert: NormalizedAlert): void {
     if (alert.kind !== 'gift') {
       this.flush(alert);

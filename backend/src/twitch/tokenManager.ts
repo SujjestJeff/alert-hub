@@ -65,6 +65,13 @@ class TokenManager extends EventEmitter {
 
   // --- internals ---
 
+  private handleRefreshFailure(err: unknown) {
+    if (err instanceof RefreshRevokedError) return;
+    console.error('[auth] token refresh failed, retrying in 60s', err);
+    clearTimeout(this.refreshTimer);
+    this.refreshTimer = setTimeout(() => this.scheduleRefresh(), 60_000);
+  }
+
   private scheduleRefresh() {
     clearTimeout(this.refreshTimer);
     if (!this.tokenSet) return;
@@ -73,11 +80,7 @@ class TokenManager extends EventEmitter {
       MIN_DELAY_MS,
     );
     this.refreshTimer = setTimeout(() => {
-      this.refreshNow().catch((err) => {
-        if (!(err instanceof RefreshRevokedError)) {
-          this.refreshTimer = setTimeout(() => this.scheduleRefresh(), 60_000);
-        }
-      });
+      this.refreshNow().catch((err) => this.handleRefreshFailure(err));
     }, delay);
   }
 
@@ -110,7 +113,9 @@ class TokenManager extends EventEmitter {
       if (remaining === null) {
         await this.refreshNow();
       }
-    } catch {}
+    } catch (err) {
+      this.handleRefreshFailure(err);
+    }
   }
 
   private markDead() {

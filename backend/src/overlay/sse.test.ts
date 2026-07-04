@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { formatSSE, tokensMatch } from './sse.js';
+import { formatSSE } from './sse.js';
+import { tokensMatch } from '../security.js';
 
 describe('formatSSE', () => {
   it('frames a named event with JSON data and a blank-line terminator', () => {

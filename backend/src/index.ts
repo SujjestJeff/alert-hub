@@ -22,14 +22,30 @@ import { AlertKind } from './config/schema.js';
 const eventsub = new EventSubClient(() => getBroadcasterId());
 const app = Fastify({ logger: { level: env.LOG_LEVEL } });
 const hub = new SseHub();
-const queue = new AlertQueue({ maxDurationMs: 8000, gapMs: 500 });
-const gifts = new GiftAggregator(2000, (a) => queue.enqueue(a));
 let lastEventAt: number | null = null;
 
 tokenManager.init();
 configStore.init();
 
-configStore.on('changed', () => hub.broadcast('config', configStore.getAll()));
+const configSettings = configStore.getSettings();
+const queue = new AlertQueue({
+  maxDurationMs: configSettings.maxDurationMs,
+  gapMs: configSettings.gapMs,
+});
+const gifts = new GiftAggregator(configSettings.aggregationWindowMs, (a) =>
+  queue.enqueue(a),
+);
+
+configStore.on('changed', () => {
+  hub.broadcast('config', configStore.getAll());
+  const settings = configStore.getSettings();
+  queue.updateOptions({
+    maxDurationMs: settings.maxDurationMs,
+    gapMs: settings.gapMs,
+  });
+  gifts.updateWindowMs(settings.aggregationWindowMs);
+});
+
 queue.on('play', (a) => hub.broadcast('alert', a));
 
 function fireTest(kind: AlertKind) {

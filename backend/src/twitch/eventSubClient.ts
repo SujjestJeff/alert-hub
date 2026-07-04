@@ -51,6 +51,7 @@ export class EventSubClient extends EventEmitter {
   private _state: EventSubState = 'stopped';
   private _pruneInterval: ReturnType<typeof setInterval> | undefined =
     undefined;
+  private connectSeq = 0;
   get state(): EventSubState {
     return this._state;
   }
@@ -78,11 +79,12 @@ export class EventSubClient extends EventEmitter {
   }
 
   private connect(url: string, isMigration: boolean): void {
+    const seq = ++this.connectSeq;
     const socket = new WebSocket(url);
     socket.on('message', (data) =>
       this.handleRaw(data.toString(), socket, isMigration),
     );
-    socket.on('close', (code) => this.onClose(code, socket));
+    socket.on('close', (code) => this.onClose(code, seq));
     socket.on('error', (err) => this.emit('error', err));
   }
 
@@ -180,8 +182,8 @@ export class EventSubClient extends EventEmitter {
     }
   }
 
-  private onClose(_code: number, socket: WebSocket): void {
-    if (socket !== this.ws) return;
+  private onClose(_code: number, seq: number): void {
+    if (seq !== this.connectSeq) return;
     clearTimeout(this.keepaliveTimer);
     if (this.closedByUs) return;
     this.scheduleReconnect();

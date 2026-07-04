@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'node:url';
@@ -18,5 +19,10 @@ export default defineConfig({
       '/events': 'http://localhost:3000',
       '/overlay': 'http://localhost:3000',
     },
+  },
+  test: {
+    name: 'admin',
+    environment: 'jsdom',
+    include: ['src/**/*.test.{ts,tsx}'],
   },
 });

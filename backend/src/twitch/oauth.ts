@@ -64,7 +64,7 @@ export async function refreshTokens(refreshToken: string) {
     body: new URLSearchParams({
       client_id: env.TWITCH_CLIENT_ID,
       client_secret: env.TWITCH_CLIENT_SECRET,
-      grand_type: 'refresh_token',
+      grant_type: 'refresh_token',
       refresh_token: refreshToken,
     }),
   });
@@ -86,7 +86,7 @@ export async function validateToken(
     headers: { Authorization: `OAuth ${accessToken}` },
   });
   if (res.status === 401) return null;
-  if (!res.ok) throw new Error('Validate failed: ${res.status}');
+  if (!res.ok) throw new Error(`Validate failed: ${res.status}`);
   const body = (await res.json()) as { expires_in: number };
   return body.expires_in;
 }

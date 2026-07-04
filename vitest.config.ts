@@ -4,7 +4,7 @@ export default defineConfig({
   test: {
     projects: [
       'backend/vitest.config.ts',
-      'admin/vitest.config.ts',
+      'admin/vite.config.ts',
       {
         test: {
           name: 'overlay',

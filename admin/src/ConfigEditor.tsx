@@ -91,7 +91,7 @@ function AlertCard({
         Sound URL
         <input
           value={draft.sound ?? ''}
-          onChange={(e) => set({ holdMs: Number(e.target.value) })}
+          onChange={(e) => set({ sound: String(e.target.value) })}
         />
       </label>
       <label>

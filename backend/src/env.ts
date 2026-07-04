@@ -9,16 +9,16 @@ config({ path: resolve(_dirname, '../../.env') });
 
 const schema = z.object({
   PORT: z.coerce.number().default(3000),
-  DATABASE_PATH: z.string().default('./data/alertbox.db'),
+  DATABASE_PATH: z.string(),
   TWITCH_CLIENT_ID: z.string().min(1),
   TWITCH_CLIENT_SECRET: z.string().min(1),
   TWITCH_REDIRECT_URI: z.string().url(),
   TWITCH_BROADCASTER_LOGIN: z.string().optional(),
   LOG_LEVEL: z.string().default('INFO'),
   EVENTSUB_WS_URL: z.string().url().optional(),
-  OVERLAY_TOKEN: z.string().optional(),
-  SESSION_SECRET: z.string().optional(),
-  ADMIN_PASSWORD: z.string().optional(),
+  OVERLAY_TOKEN: z.string(),
+  SESSION_SECRET: z.string(),
+  ADMIN_PASSWORD: z.string(),
   NODE_ENV: z.string().optional(),
 });
 

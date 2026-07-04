@@ -22,6 +22,10 @@ export class AlertQueue extends EventEmitter {
     return this.current !== undefined;
   }
 
+  updateOptions(opts: QueueOptions) {
+    this.opts = opts;
+  }
+
   enqueue(alert: NormalizedAlert): void {
     this.queue.push(alert);
     this.pump();

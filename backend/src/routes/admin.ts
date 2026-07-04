@@ -1,12 +1,12 @@
 import type { FastifyInstance } from 'fastify';
 import type { EventSubClient } from '../twitch/eventSubClient.js';
 import type { SseHub } from '../overlay/sseHub.js';
-import { timingSafeEqual } from 'node:crypto';
 import { env } from '../env.js';
 import { configStore } from '../config/configStore.js';
 import { ALERT_KINDS, type AlertKind } from '../config/schema.js';
 import { requireAdmin, ADMIN_COOKIE } from './adminAuth.js';
 import { makeStatusSnapshot } from '../status/statusService.js';
+import { tokensMatch } from '../security.js';
 
 interface AdminRoutesOpts {
   fireTest: (kind: AlertKind) => void;
@@ -16,10 +16,7 @@ interface AdminRoutesOpts {
 }
 
 function passwordOk(input: unknown): boolean {
-  if (typeof input !== 'string' || !env.ADMIN_PASSWORD) return false;
-  const a = Buffer.from(input),
-    b = Buffer.from(env.ADMIN_PASSWORD);
-  return a.length === b.length && timingSafeEqual(a, b);
+  return tokensMatch(input, env.ADMIN_PASSWORD);
 }
 
 export default async function adminRoutes(

@@ -7,6 +7,7 @@ import { StatusBar } from "./StatusBar";
 export default function App() {
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [config, setConfig] = useState<any>(null);
+  const previewRef = useRef<PreviewHandle>(null);
 
   async function load() {
     try { setConfig(await getConfig()); setAuthed(true); }
@@ -16,7 +17,6 @@ export default function App() {
 
   if (authed === null) return <p>Loading...</p>;
   if (!authed) return <Login onSuccess={load} />;
-  const previewRef = useRef<PreviewHandle>(null);
   return (
     <div className="layout">
       <StatusBar />

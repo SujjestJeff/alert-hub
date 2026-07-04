@@ -30,7 +30,7 @@ afterEach(() => vi.useRealTimers());
 
 describe("rouding", () => {
   it("emits a normalized notification", () => {
-    const c = new EventSubClient("123");
+    const c = new EventSubClient(async () => "123");
     const got: any[] = [];
     c.on("notification", (n) => got.push(n));
     c.handleRaw(notification("channel.cheer", "n1"), fakeSocket(), false);
@@ -39,7 +39,7 @@ describe("rouding", () => {
   });
 
   it("drops duplicate message_ids", () => {
-    const c = new EventSubClient("123");
+    const c = new EventSubClient(async () => "123");
     const got: any[] = [];
     c.on("notification", (n) => got.push(n));
     c.handleRaw(notification("channel.follow", "dup"), fakeSocket(), false);
@@ -48,7 +48,7 @@ describe("rouding", () => {
   });
 
   it("emits revocation", () => {
-    const c = new EventSubClient("123");
+    const c = new EventSubClient(async () => "123");
     const got: any[] = [];
     c.on("revocation", (s) => got.push(s))
     c.handleRaw(JSON.stringify({
@@ -61,21 +61,21 @@ describe("rouding", () => {
 
 describe("the resubscribe distinction", () => {
   it("subscribes on a FRESH welcome", async () => {
-    const c = new EventSubClient("123");
+    const c = new EventSubClient(async () => "123");
     c.handleRaw(welcome("sess1"), fakeSocket(), false);
     await vi.runAllTimersAsync();
     expect((createSubscription as any).mock.calls.length).toBeGreaterThanOrEqual(6);
   });
 
   it("does NOT resubscribe on a MIGRATION welcome", async () => {
-    const c = new EventSubClient("123");
+    const c = new EventSubClient(async () => "123");
     c.handleRaw(welcome("sess2"), fakeSocket(), true);
     await vi.runAllTimersAsync();
     expect(createSubscription).not.toHaveBeenCalled();
   })
 
   it("session_reconnect opens a migration connection, no resubscribe", () => {
-    const c = new EventSubClient("123");
+    const c = new EventSubClient(async () => "123");
     const connectSpy = vi.spyOn(c as any, "connect").mockImplementation(() => { });
     c.handleRaw(reconnect("wss://new/ws"), fakeSocket(), false);
     expect(connectSpy).toHaveBeenCalledWith("wss://new/ws", true);

@@ -17,7 +17,7 @@ async function helix(path: string, init: RequestInit = {}): Promise<Response> {
   });
 }
 
-export async function getBraodcasterId(): Promise<string> {
+export async function getBroadcasterId(): Promise<string> {
   const res = await helix("/users");
   if (!res.ok) throw new Error(`getBraodcasterId failed: ${res.status}`);
   const body = (await res.json()) as { data: { id: string; login: string }[] };

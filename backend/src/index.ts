@@ -1,15 +1,13 @@
 import { env } from './env.js';
 import Fastify from 'fastify';
 import cookie from "@fastify/cookie";
-import fastifyStatic from "@fastify/static";
-import { join } from "node:path";
 import { registerHealthRoutes } from './health.js';
 import { registerStaticRoutes } from './static.js';
 import adminRoutes from "./routes/admin.js";
 import authRoutes from './routes/auth.js';
 import eventRoutes from './routes/events.js';
 import { SseHub } from "./overlay/sseHub.js";
-import { getBraodcasterId } from './twitch/helix.js';
+import { getBroadcasterId } from './twitch/helix.js';
 import { EventSubClient } from "./twitch/eventSubClient.js";
 import { tokenManager } from "./twitch/tokenManager.js";
 import { normalize } from "./alerts/normalize.js";
@@ -27,26 +25,16 @@ function fireTest(kind: AlertKind) {
   gifts.add(alert);
 }
 
-const eventsub = new EventSubClient(await getBraodcasterId());
+tokenManager.init();
 configStore.init();
+const eventsub = new EventSubClient(() => getBroadcasterId());
 const app = Fastify({ logger: { level: env.LOG_LEVEL } });
 const hub = new SseHub();
 const queue = new AlertQueue({ maxDurationMs: 8000, gapMs: 500 });
 
-if (env.NODE_ENV === "production") {
-  await app.register(fastifyStatic, { root: join(process.cwd(), "overlay"), prefix: "/overlay/" });
-  await app.register(fastifyStatic, { root: join(process.cwd(), "admin/dist"), prefix: "/", decorateReply: false });
-  app.setNotFoundHandler((req, reply) => {
-    if (req.method === "GET" && !req.url.startsWith("/admin/api") && !req.url.startsWith("/auth")
-      && !req.url.startsWith("/events") && !req.url.startsWith("/overlay")) {
-      return reply.sendFile("index.html", join(process.cwd(), "admin/dist"));
-    }
-    reply.code(404).send({ error: "not found" });
-  });
-}
+registerStaticRoutes(app);
 
 registerHealthRoutes(app, eventsub);
-registerStaticRoutes(app);
 await app.register(authRoutes);
 await app.register(eventRoutes, { hub, queue });
 await app.register(cookie, { secret: env.SESSION_SECRET });
@@ -58,7 +46,6 @@ app.get("/overlay/config", (req, reply) => {
   return configStore.getAll();
 });
 
-tokenManager.init();
 
 let lastEventAt: number | null = null;
 

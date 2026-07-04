@@ -40,12 +40,11 @@ export class EventSubClient extends EventEmitter {
   private currentTimeoutMs = 20_000;
   private backoff = createBackoff({ base: 1_000, max: 60_000, factor: 2 });
   private closedByUs = false;
-  private seen = new Map<string, number>();
   private _state: EventSubState = "stopped";
   get state(): EventSubState { return this._state; }
   get sessionId(): string | undefined { return this._sessionId; }
 
-  constructor(private broadcasterId: string) { super(); }
+  constructor(public getBroadcasterId: () => Promise<string>) { super(); }
 
   start(): void {
     this.closedByUs = false;
@@ -121,7 +120,8 @@ export class EventSubClient extends EventEmitter {
 
   private async subscribeAll(): Promise<void> {
     if (!this._sessionId) return;
-    for (const spec of desiredSubscriptions(this.broadcasterId)) {
+    const broadcasterId = await this.getBroadcasterId();
+    for (const spec of desiredSubscriptions(broadcasterId)) {
       try {
         const status = await createSubscription(spec, this._sessionId);
         if (status !== "enabled") this.emit("sub-warning", { spec, status });

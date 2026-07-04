@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Create table tokens to hold user twitch access tokens 
+- Create table tokens to hold user twitch access tokens
 - Add token store for token crud operations
 - Create new token manager as single source of through for usable tokens
 - Add small wrapper that injects client-id & valid bearer token for helix calls
@@ -37,7 +37,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tie together all the vitest configs at root level
 - New status view added into admin interface
 - Readme updated with bootstrap instructions
-
 
 ### Changes
 

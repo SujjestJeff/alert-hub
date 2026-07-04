@@ -1,21 +1,26 @@
-import { EventEmitter } from "node:events";
-import type { NormalizedAlert } from "./types.js";
+import { EventEmitter } from 'node:events';
+import type { NormalizedAlert } from './types.js';
 
 export interface QueueOptions {
   maxDurationMs: number;
   gapMs: number;
 }
 
-
 export class AlertQueue extends EventEmitter {
   private queue: NormalizedAlert[] = [];
   private current?: NormalizedAlert;
   private doneTimer?: NodeJS.Timeout;
 
-  constructor(private opts: QueueOptions) { super(); }
+  constructor(private opts: QueueOptions) {
+    super();
+  }
 
-  get length(): number { return this.queue.length; }
-  get isPlaying(): boolean { return this.current !== undefined; }
+  get length(): number {
+    return this.queue.length;
+  }
+  get isPlaying(): boolean {
+    return this.current !== undefined;
+  }
 
   enqueue(alert: NormalizedAlert): void {
     this.queue.push(alert);
@@ -29,9 +34,12 @@ export class AlertQueue extends EventEmitter {
   private pump(): void {
     if (this.current) return;
     const next = this.queue.shift();
-    if (!next) { this.emit("idle"); return; }
+    if (!next) {
+      this.emit('idle');
+      return;
+    }
     this.current = next;
-    this.emit("play", next);
+    this.emit('play', next);
     this.doneTimer = setTimeout(() => this.finish(), this.opts.maxDurationMs);
   }
 

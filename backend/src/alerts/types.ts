@@ -1,4 +1,5 @@
-export type AlertKind = "follow" | "subscription" | "resub" | "gift" | "raid" | "cheer";
+export type AlertKind =
+  'follow' | 'subscription' | 'resub' | 'gift' | 'raid' | 'cheer';
 
 export interface NormalizedAlert {
   id: string;

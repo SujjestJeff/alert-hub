@@ -20,7 +20,7 @@ No third-party overlay service. No account on someone else's site. No "we've upd
 
 - It doesn't phone home. There's no telemetry, no analytics, no mothership.
 - It doesn't sell your data, because there's nobody to sell it to. It's just you.
-- It won't read your chat's cursed opinions aloud. That's a *you* problem, and a different project.
+- It won't read your chat's cursed opinions aloud. That's a _you_ problem, and a different project.
 
 ---
 
@@ -55,7 +55,7 @@ That's it. Fire a test alert from the panel and watch it land in OBS.
 
 ## Register your own Twitch app
 
-Because this is *your* box, it uses *your* Twitch application credentials. One-time setup:
+Because this is _your_ box, it uses _your_ Twitch application credentials. One-time setup:
 
 1. Go to the [Twitch Developer Console](https://dev.twitch.tv/console/apps) → **Register Your Application**.
 2. Name it whatever (Twitch won't let two apps share a name globally, so "Alert Box" is taken — get creative).
@@ -63,7 +63,7 @@ Because this is *your* box, it uses *your* Twitch application credentials. One-t
    ```
    http://localhost:3000/auth/callback
    ```
-4. Category: *Application Integration*. Create it.
+4. Category: _Application Integration_. Create it.
 5. Copy the **Client ID**, then **New Secret** and copy that too.
 6. Paste both into your `.env`.
 
@@ -75,19 +75,19 @@ Because this is *your* box, it uses *your* Twitch application credentials. One-t
 
 Copy `.env.example` to `.env` and fill it in.
 
-| Variable | Required | What it's for |
-|---|---|---|
-| `PORT` | no | Port to serve on. Default `3000`. |
-| `DATABASE_PATH` | no | Where SQLite lives. In Docker this is `/data/alertbox.db` (on the volume). |
-| `TWITCH_CLIENT_ID` | **yes** | From your Twitch app. |
-| `TWITCH_CLIENT_SECRET` | **yes** | From your Twitch app. Keep it secret. Keep it safe. |
-| `TWITCH_REDIRECT_URI` | **yes** | Must match your app's Redirect URL exactly. |
-| `TWITCH_BROADCASTER_LOGIN` | **yes** | Your channel login name (the one in your URL, lowercase). |
-| `ADMIN_PASSWORD` | **yes** | Password for the config panel. Make it not-`password`. |
-| `SESSION_SECRET` | **yes** | Random string used to sign the admin login cookie. |
-| `OVERLAY_TOKEN` | **yes** | Random string that gates your overlay URL so randos can't hijack it. |
-| `EVENTSUB_WS_URL` | no | Only for pointing at the Twitch CLI mock server during development. Leave it unset. |
-| `NODE_ENV` | no | `production` in Docker. Also flips the login cookie to `secure`. |
+| Variable                   | Required | What it's for                                                                       |
+| -------------------------- | -------- | ----------------------------------------------------------------------------------- |
+| `PORT`                     | no       | Port to serve on. Default `3000`.                                                   |
+| `DATABASE_PATH`            | no       | Where SQLite lives. In Docker this is `/data/alertbox.db` (on the volume).          |
+| `TWITCH_CLIENT_ID`         | **yes**  | From your Twitch app.                                                               |
+| `TWITCH_CLIENT_SECRET`     | **yes**  | From your Twitch app. Keep it secret. Keep it safe.                                 |
+| `TWITCH_REDIRECT_URI`      | **yes**  | Must match your app's Redirect URL exactly.                                         |
+| `TWITCH_BROADCASTER_LOGIN` | **yes**  | Your channel login name (the one in your URL, lowercase).                           |
+| `ADMIN_PASSWORD`           | **yes**  | Password for the config panel. Make it not-`password`.                              |
+| `SESSION_SECRET`           | **yes**  | Random string used to sign the admin login cookie.                                  |
+| `OVERLAY_TOKEN`            | **yes**  | Random string that gates your overlay URL so randos can't hijack it.                |
+| `EVENTSUB_WS_URL`          | no       | Only for pointing at the Twitch CLI mock server during development. Leave it unset. |
+| `NODE_ENV`                 | no       | `production` in Docker. Also flips the login cookie to `secure`.                    |
 
 Generate the random ones however you like; this works:
 
@@ -131,8 +131,8 @@ So `"{name} raided with {count}!"` becomes `"BigStreamer raided with 300!"`.
 
 Two buttons per alert:
 
-- **Preview (draft)** — renders your *unsaved* changes instantly in the panel. Muted, because tuning a template shouldn't blast the sub sound at you forty times.
-- **Fire test (live → OBS)** — pushes a fake event through the *real* pipeline, so it shows up in the preview *and* on your actual stream, exactly like the real thing. Save first; this uses saved config.
+- **Preview (draft)** — renders your _unsaved_ changes instantly in the panel. Muted, because tuning a template shouldn't blast the sub sound at you forty times.
+- **Fire test (live → OBS)** — pushes a fake event through the _real_ pipeline, so it shows up in the preview _and_ on your actual stream, exactly like the real thing. Save first; this uses saved config.
 
 Changes apply live — no restart, no refresh. Tweak a sound, fire a test, hear the difference.
 
@@ -157,12 +157,12 @@ Run the tests with `npm test`. There are a lot of them, mostly guarding the bori
 
 The one-time Twitch authorization requests exactly what it needs and nothing more:
 
-| Alert | Twitch scope |
-|---|---|
-| Follows | `moderator:read:followers` |
+| Alert                     | Twitch scope                 |
+| ------------------------- | ---------------------------- |
+| Follows                   | `moderator:read:followers`   |
 | Subs / resubs / gift subs | `channel:read:subscriptions` |
-| Cheers (bits) | `bits:read` |
-| Raids | *(none needed)* |
+| Cheers (bits)             | `bits:read`                  |
+| Raids                     | _(none needed)_              |
 
 If you don't care about one of these, you can leave that alert disabled in the panel. The scopes are still requested at login, but nothing's forcing you to use them.
 
@@ -190,7 +190,7 @@ And once you're on HTTPS, set `NODE_ENV=production` so the admin cookie goes `se
 
 **No alerts showing up.** Check the status bar at the top of the admin panel — three dots tell you whether **Twitch**, **EventSub**, and your **overlay** are each connected. Also hit `http://localhost:3000/health` for a quick pulse. If Twitch is red, your token probably expired — click **Reconnect Twitch**.
 
-**Alerts fire but there's no sound.** Enable **Control Audio via OBS** on the browser source. If the *first* alert of a session is silent but the rest are fine, that's OBS not preloading — it usually sorts itself out after the first one; a source refresh helps.
+**Alerts fire but there's no sound.** Enable **Control Audio via OBS** on the browser source. If the _first_ alert of a session is silent but the rest are fine, that's OBS not preloading — it usually sorts itself out after the first one; a source refresh helps.
 
 **`redirect_mismatch` at login.** Your Twitch app's Redirect URL doesn't exactly match `TWITCH_REDIRECT_URI`. See the big warning above. It's this.
 
@@ -217,4 +217,4 @@ PRs welcome. It's a self-host tool, so the bar is: does it stay simple, and does
 MIT
 ---
 
-*Built live, on stream, mostly by hand. If it drops an alert at the worst possible moment, that's not a bug, it's content.* 📺
+_Built live, on stream, mostly by hand. If it drops an alert at the worst possible moment, that's not a bug, it's content._ 📺

@@ -64,6 +64,7 @@ Base image: `jlesage/baseimage-gui:ubuntu-20.04-v4`. Follow its conventions:
 - **`/config`** is the baseimage's standard persistent data directory, automatically owned by the app user
 
 The container build:
+
 1. Sets `APP_NAME`/`APP_VERSION` via `set-cont-env`
 2. Installs Chrome dependencies and Chrome itself via `add-pkg`
 3. Installs Node.js 20 via NodeSource + `add-pkg nodejs`
@@ -74,6 +75,7 @@ The container build:
 8. noVNC exposes the Chrome window on port **5800**
 
 To build and run locally:
+
 ```bash
 docker buildx build --platform linux/amd64 -t alert-hub .
 docker run --rm -p 5800:5800 alert-hub

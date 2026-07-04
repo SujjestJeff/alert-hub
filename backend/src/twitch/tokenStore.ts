@@ -1,4 +1,4 @@
-import { db } from "../db.js";
+import { db } from '../db.js';
 
 export interface TokenSet {
   accessToken: string;
@@ -7,7 +7,7 @@ export interface TokenSet {
   scopes: string[];
 }
 
-const ROW_ID = "broadcaster";
+const ROW_ID = 'broadcaster';
 
 const selectStmt = db.prepare(`SELECT * FROM tokens WHERE id = ?`);
 const upsertStmt = db.prepare(`

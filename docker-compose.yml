@@ -1,11 +1,11 @@
 services:
   alertbox:
     build: .
-    ports: ["3000:3000"]
+    ports: ['3000:3000']
     env_file: .env
     environment:
-      DATABASE_PATH: /data/alertbox.db   # onto the volume, not a container layer
-    volumes: ["alertbox-data:/data"]
-    restart: unless-stopped              # auto-recovers after a crash
+      DATABASE_PATH: /data/alertbox.db # onto the volume, not a container layer
+    volumes: ['alertbox-data:/data']
+    restart: unless-stopped # auto-recovers after a crash
 volumes:
   alertbox-data:

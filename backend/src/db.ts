@@ -1,14 +1,14 @@
-import Database from 'better-sqlite3'
-import { mkdirSync } from 'node:fs'
-import { dirname } from 'node:path'
-import { env } from "./env.js"
+import Database from 'better-sqlite3';
+import { mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
+import { env } from './env.js';
 
 mkdirSync(dirname(env.DATABASE_PATH), { recursive: true });
 
 export const db = new Database(env.DATABASE_PATH);
 
-db.pragma('journal_mode = WAL')
-db.pragma('foreign_keys = ON')
+db.pragma('journal_mode = WAL');
+db.pragma('foreign_keys = ON');
 
 runMigrations(db);
 

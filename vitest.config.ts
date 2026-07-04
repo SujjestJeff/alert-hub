@@ -1,15 +1,15 @@
-import { defineConfig } from "vitest/config";
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
     projects: [
-      "backend/vitest.config.ts",
-      "admin/vitest.config.ts",
+      'backend/vitest.config.ts',
+      'admin/vitest.config.ts',
       {
         test: {
-          name: "overlay",
-          include: ["overlay/**/*.test.js"],
-          environment: "node",
+          name: 'overlay',
+          include: ['overlay/**/*.test.js'],
+          environment: 'node',
         },
       },
     ],

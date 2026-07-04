@@ -1,6 +1,16 @@
-export interface BackoffOptions { base?: number; max?: number; factor?: number; jitter?: number }
+export interface BackoffOptions {
+  base?: number;
+  max?: number;
+  factor?: number;
+  jitter?: number;
+}
 
-export function createBackoff({ base = 1_000, max = 60_000, factor = 2, jitter = 0.2 }: BackoffOptions = {}) {
+export function createBackoff({
+  base = 1_000,
+  max = 60_000,
+  factor = 2,
+  jitter = 0.2,
+}: BackoffOptions = {}) {
   let current = base;
   return {
     next(): number {
@@ -9,7 +19,11 @@ export function createBackoff({ base = 1_000, max = 60_000, factor = 2, jitter =
       current = Math.min(current * factor, max);
       return withJitter;
     },
-    reset(): void { current = base; },
-    get peek(): number { return current; },
+    reset(): void {
+      current = base;
+    },
+    get peek(): number {
+      return current;
+    },
   };
 }

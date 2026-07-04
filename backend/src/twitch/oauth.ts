@@ -1,17 +1,22 @@
-import { randomBytes } from "node:crypto";
-import { env } from "../env.js";
-import { TWITCH_AUTHORIZE_URL, TWITCH_TOKEN_URL, TWITCH_VALIDATE_URL, SCOPES } from "./endpoints.js";
+import { randomBytes } from 'node:crypto';
+import { env } from '../env.js';
+import {
+  TWITCH_AUTHORIZE_URL,
+  TWITCH_TOKEN_URL,
+  TWITCH_VALIDATE_URL,
+  SCOPES,
+} from './endpoints.js';
 
 export function makeState(): string {
-  return randomBytes(16).toString("hex")
+  return randomBytes(16).toString('hex');
 }
 
 export function buildAuthorizeUrl(state: string): string {
   const params = new URLSearchParams({
-    response_type: "code",
+    response_type: 'code',
     client_id: env.TWITCH_CLIENT_ID,
     redirect_uri: env.TWITCH_REDIRECT_URI,
-    scope: SCOPES.join(" "),
+    scope: SCOPES.join(' '),
     state,
   });
   return `${TWITCH_AUTHORIZE_URL}?${params.toString()}`;
@@ -36,12 +41,12 @@ function toStored(r: TwitchTokenResponse) {
 
 export async function exchangeCodeForTokens(code: string) {
   const res = await fetch(TWITCH_TOKEN_URL, {
-    method: "POST",
+    method: 'POST',
     body: new URLSearchParams({
       client_id: env.TWITCH_CLIENT_ID,
       client_secret: env.TWITCH_CLIENT_SECRET,
       code,
-      grant_type: "authorization_code",
+      grant_type: 'authorization_code',
       redirect_uri: env.TWITCH_REDIRECT_URI,
     }),
   });
@@ -51,16 +56,16 @@ export async function exchangeCodeForTokens(code: string) {
   return toStored((await res.json()) as TwitchTokenResponse);
 }
 
-export class RefreshRevokedError extends Error { }
+export class RefreshRevokedError extends Error {}
 
 export async function refreshTokens(refreshToken: string) {
   const res = await fetch(TWITCH_TOKEN_URL, {
-    method: "POST",
+    method: 'POST',
     body: new URLSearchParams({
       client_id: env.TWITCH_CLIENT_ID,
       client_secret: env.TWITCH_CLIENT_SECRET,
-      grand_type: "refresh_token",
-      refresh_token: refreshToken
+      grand_type: 'refresh_token',
+      refresh_token: refreshToken,
     }),
   });
 
@@ -74,7 +79,9 @@ export async function refreshTokens(refreshToken: string) {
   return toStored((await res.json()) as TwitchTokenResponse);
 }
 
-export async function validateToken(accessToken: string): Promise<number | null> {
+export async function validateToken(
+  accessToken: string,
+): Promise<number | null> {
   const res = await fetch(TWITCH_VALIDATE_URL, {
     headers: { Authorization: `OAuth ${accessToken}` },
   });

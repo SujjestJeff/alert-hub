@@ -1,12 +1,21 @@
-import type { NormalizedAlert } from "./types.js";
+import type { NormalizedAlert } from './types.js';
 
 export class GiftAggregator {
-  private buffers = new Map<string, { alert: NormalizedAlert; timer: NodeJS.Timeout }>();
+  private buffers = new Map<
+    string,
+    { alert: NormalizedAlert; timer: NodeJS.Timeout }
+  >();
 
-  constructor(private windowMs: number, private flush: (a: NormalizedAlert) => void) { }
+  constructor(
+    private windowMs: number,
+    private flush: (a: NormalizedAlert) => void,
+  ) {}
 
   add(alert: NormalizedAlert): void {
-    if (alert.kind !== "gift") { this.flush(alert); return; }
+    if (alert.kind !== 'gift') {
+      this.flush(alert);
+      return;
+    }
 
     const key = alert.displayName;
     const existing = this.buffers.get(key);

@@ -1,6 +1,11 @@
-import { EventEmitter } from "node:events";
-import { loadTokens, saveTokens, clearTokens, type TokenSet } from "./tokenStore.js";
-import { refreshTokens, validateToken, RefreshRevokedError } from "./oauth.js";
+import { EventEmitter } from 'node:events';
+import {
+  loadTokens,
+  saveTokens,
+  clearTokens,
+  type TokenSet,
+} from './tokenStore.js';
+import { refreshTokens, validateToken, RefreshRevokedError } from './oauth.js';
 
 const REFRESH_MARGIN_MS = 20 * 60 * 1000;
 const MIN_DELAY_MS = 30 * 1000;
@@ -17,7 +22,10 @@ class TokenManager extends EventEmitter {
     this.tokenSet = loadTokens();
     if (this.tokenSet) {
       this.scheduleRefresh();
-      this.validateTimer = setInterval(() => this.revalidate(), VALIDATE_EVERY_MS);
+      this.validateTimer = setInterval(
+        () => this.revalidate(),
+        VALIDATE_EVERY_MS,
+      );
     } else {
       this.needsReauth = true;
     }
@@ -29,13 +37,16 @@ class TokenManager extends EventEmitter {
     saveTokens(t);
     this.scheduleRefresh();
     if (!this.validateTimer) {
-      this.validateTimer = setInterval(() => this.revalidate(), VALIDATE_EVERY_MS);
+      this.validateTimer = setInterval(
+        () => this.revalidate(),
+        VALIDATE_EVERY_MS,
+      );
     }
-    this.emit("connected");
+    this.emit('connected');
   }
 
   async getValidAccessToken(): Promise<string> {
-    if (!this.tokenSet) throw new Error("not_authenticated");
+    if (!this.tokenSet) throw new Error('not_authenticated');
     if (Date.now() < this.tokenSet.expiresAt - 60_000) {
       return this.tokenSet.accessToken;
     }
@@ -57,7 +68,10 @@ class TokenManager extends EventEmitter {
   private scheduleRefresh() {
     clearTimeout(this.refreshTimer);
     if (!this.tokenSet) return;
-    const delay = Math.max(this.tokenSet.expiresAt - Date.now() - REFRESH_MARGIN_MS, MIN_DELAY_MS)
+    const delay = Math.max(
+      this.tokenSet.expiresAt - Date.now() - REFRESH_MARGIN_MS,
+      MIN_DELAY_MS,
+    );
     this.refreshTimer = setTimeout(() => {
       this.refreshNow().catch((err) => {
         if (!(err instanceof RefreshRevokedError)) {
@@ -69,7 +83,7 @@ class TokenManager extends EventEmitter {
 
   private refreshNow(): Promise<TokenSet> {
     if (this.inFlight) return this.inFlight;
-    if (!this.tokenSet) return Promise.reject(new Error("not_authenticated"));
+    if (!this.tokenSet) return Promise.reject(new Error('not_authenticated'));
 
     const refreshToken = this.tokenSet.refreshToken;
     this.inFlight = (async () => {
@@ -78,7 +92,7 @@ class TokenManager extends EventEmitter {
         this.tokenSet = fresh;
         saveTokens(fresh);
         this.scheduleRefresh();
-        return fresh
+        return fresh;
       } catch (err) {
         if (err instanceof RefreshRevokedError) this.markDead();
         throw err;
@@ -86,7 +100,7 @@ class TokenManager extends EventEmitter {
         this.inFlight = null;
       }
     })();
-    return this.inFlight
+    return this.inFlight;
   }
 
   private async revalidate() {
@@ -96,9 +110,7 @@ class TokenManager extends EventEmitter {
       if (remaining === null) {
         await this.refreshNow();
       }
-    } catch {
-
-    }
+    } catch {}
   }
 
   private markDead() {
@@ -106,10 +118,9 @@ class TokenManager extends EventEmitter {
     clearTokens();
     this.tokenSet = null;
     clearTimeout(this.refreshTimer);
-    console.error("[auth] refresh token rejected - re-auth required");
-    this.emit("needs-reauth");
+    console.error('[auth] refresh token rejected - re-auth required');
+    this.emit('needs-reauth');
   }
-
 }
 
 export const tokenManager = new TokenManager();

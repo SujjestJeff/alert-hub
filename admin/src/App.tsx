@@ -1,8 +1,9 @@
-import { useRef, useEffect, useState } from 'react';
-import { getConfig, login, Unauthorized } from './api';
-import { AlertPreview, type PreviewHandle } from './AlertPreview';
-import { ConfigEditor } from './ConfigEditor';
-import { StatusBar } from './StatusBar';
+import { useEffect, useRef, useState } from 'react';
+import { getConfig, Unauthorized } from './api';
+import type { PreviewHandle } from './AlertPreview';
+import { Splash } from './splash';
+import { LoginScreen } from './LoginScreen';
+import { Dashboard } from './Dashboard';
 
 export default function App() {
   const [authed, setAuthed] = useState<boolean | null>(null);
@@ -18,42 +19,14 @@ export default function App() {
       else throw e;
     }
   }
+
   useEffect(() => {
     load();
   }, []);
 
-  if (authed === null) return <p>Loading...</p>;
-  if (!authed) return <Login onSuccess={load} />;
+  if (authed === null) return <Splash />;
+  if (!authed) return <LoginScreen onSuccess={load} />;
   return (
-    <div className="layout">
-      <StatusBar />
-      <ConfigEditor
-        config={config}
-        onChange={setConfig}
-        previewRef={previewRef}
-      />
-      <AlertPreview ref={previewRef} />
-    </div>
-  );
-}
-
-function Login({ onSuccess }: { onSuccess: () => void }) {
-  const [pw, setPw] = useState('');
-  const [err, setErr] = useState('');
-  const submit = async () =>
-    (await login(pw)) ? onSuccess() : setErr('Incorrect password');
-  return (
-    <div className="login">
-      <h1>Alert Box Admin</h1>
-      <input
-        type="password"
-        value={pw}
-        placeholder="Password"
-        onChange={(e) => setPw(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && submit()}
-      />
-      <button onClick={submit}>Log in</button>
-      {err && <p className="error">{err}</p>}
-    </div>
+    <Dashboard config={config} setConfig={setConfig} previewRef={previewRef} />
   );
 }

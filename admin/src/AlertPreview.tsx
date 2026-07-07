@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import { Monitor } from 'lucide-react';
 import { createDomRenderer } from '@overlay/renderer.js';
 import { KIND_CLASS, makeSampleAlert } from '@overlay/kinds.js';
 import '@overlay/alert.css';
@@ -53,9 +54,25 @@ export const AlertPreview = forwardRef<PreviewHandle>(
     }));
 
     return (
-      <div className="preview-stage">
-        <div ref={boxRef} className="alert hidden" />
-      </div>
+      <>
+        <div className="px-5 py-5 border-b border-border">
+          <div className="flex items-center gap-2 mb-0.5">
+            <Monitor size={14} className="text-primary" />
+            <span
+              className="text-sm font-semibold text-foreground"
+              style={{ fontFamily: 'Outift, sans-serif' }}
+            >
+              OBS Preview
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Live preview - fires to overlays
+          </p>
+        </div>
+        <div className="preview-stage flex-1">
+          <div ref={boxRef} className="alert hidden" />
+        </div>
+      </>
     );
   },
 );

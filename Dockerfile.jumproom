@@ -1,4 +1,8 @@
-# Build stage: runs natively on the host CPU (no QEMU) to avoid esbuild/Go lfstack crashes
+# Build stage: runs natively on the host CPU (no QEMU) to avoid esbuild/Go lfstack crashes.
+# Only compiles TypeScript/bundles JS here — no native modules are loaded, so the
+# alpine (musl) build output for backend/dist and admin/dist is portable to the
+# glibc runtime image below. better-sqlite3's native addon is built separately,
+# directly in the runtime stage, so it matches that stage's glibc/ABI.
 FROM --platform=$BUILDPLATFORM node:20-alpine AS builder
 WORKDIR /app
 COPY package.json package-lock.json* ./
@@ -6,7 +10,11 @@ COPY backend/package.json ./backend/
 COPY admin/package.json ./admin/
 RUN npm install
 COPY tsconfig.base.json ./
+COPY backend/tsconfig.json ./backend/
+COPY backend/src ./backend/src
 COPY admin ./admin
+COPY overlay ./overlay
+RUN npm run build -w backend
 RUN npm run build -w admin
 
 # Runtime stage: amd64 container for noVNC deployment
@@ -79,7 +87,10 @@ RUN add-pkg \
     dbus \
     dbus-x11 \
     upower \
-    git
+    git \
+    python3 \
+    make \
+    g++
 
 ### Support NVIDIA GPUs for graphics acceleration
 RUN echo "/usr/local/nvidia/lib" >> /etc/ld.so.conf.d/nvidia.conf && \
@@ -92,14 +103,37 @@ RUN curl -sSL https://dl.google.com/linux/linux_signing_key.pub | apt-key add - 
 RUN sed -i '/^SystemdService=/d' /usr/share/dbus-1/system-services/org.freedesktop.UPower.service && \
     dbus-uuidgen > /etc/machine-id
 
-### Install Node.js 20 for static file serving at runtime
+### Install Node.js 20 to run the backend at runtime
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    add-pkg nodejs && \
-    npm install -g serve
+    add-pkg nodejs
 
-### Copy pre-built admin SPA from build stage (avoids running esbuild under QEMU)
-### startapp.sh serves /app/dist, so we place the admin build there
-COPY --from=builder /app/admin/dist ./dist
+### Install the backend's production dependencies here (not in the alpine build
+### stage above) so native addons — better-sqlite3 — compile against this image's
+### own glibc/ABI instead of alpine's musl.
+COPY package.json package-lock.json* ./
+COPY backend/package.json ./backend/
+COPY admin/package.json ./admin/
+RUN npm ci -w backend --omit=dev
+
+### Copy pre-built backend + admin SPA from the build stage (avoids running esbuild
+### or tsc under QEMU), plus the overlay page the backend serves at /overlay.
+COPY --from=builder /app/backend/dist ./backend/dist
+COPY --from=builder /app/admin/dist ./admin/dist
+COPY overlay ./overlay
+
+### Default env so the backend (env.ts) will actually boot without a real .env —
+### fine for visually reviewing the admin UI/overlay. Non-secret values only;
+### TWITCH_CLIENT_SECRET/OVERLAY_TOKEN/SESSION_SECRET/ADMIN_PASSWORD are
+### generated at container startup instead (see startapp.sh) so nothing
+### secret-shaped is baked into the image layers. DATABASE_PATH lands in
+### /config, the baseimage's persistent data dir, so the SQLite file (and the
+### generated secrets, see startapp.sh) survive container restarts.
+ENV PORT=3000
+ENV DATABASE_PATH=/config/alertbox.db
+ENV NODE_ENV=production
+ENV LOG_LEVEL=info
+ENV TWITCH_CLIENT_ID=jumproom-placeholder-client-id
+ENV TWITCH_REDIRECT_URI=http://localhost:3000/auth/callback
 
 ### Copy container filesystem overlays (noVNC UI, NVIDIA config, PulseAudio config)
 COPY rootfs/ /

@@ -36,7 +36,7 @@ export function createDomRenderer(
           fill: 'forwards',
         }).finished,
       reportDone: (id) => {
-        box.calssName = 'alert hidden';
+        box.className = 'alert hidden';
         onDone(id);
       },
     };

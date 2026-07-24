@@ -13,6 +13,8 @@ import {
   Eye,
   Flame,
   AlertCircle,
+  Plus,
+  X,
 } from 'lucide-react';
 import { saveAlert, fireTestAlert } from './api';
 
@@ -138,6 +140,7 @@ function AlertCard({
   previewRef: any;
 }) {
   const [draft, setDraft] = useState(value);
+  const [testAmount, setTestAmount] = useState<number>(0);
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>(
     'idle',
   );
@@ -146,11 +149,44 @@ function AlertCard({
   const meta = KIND_META[kind];
 
   const set = (patch: any) => setDraft({ ...draft, ...patch });
+  const hasTiers = kind !== 'follow';
+
+  const setVariation = (i: number, text: string) =>
+    set({
+      variations: draft.variations.map((v: string, j: number) =>
+        j === i ? text : v,
+      ),
+    });
+  const addVariation = () => set({ variations: [...draft.variations, ''] });
+  const removeVariation = (i: number) =>
+    set({
+      variations: draft.variations.filter((_: string, j: number) => j !== i),
+    });
+
+  const setTier = (i: number, patch: any) =>
+    set({
+      tiers: draft.tiers.map((t: any, j: number) =>
+        j === i ? { ...t, ...patch } : t,
+      ),
+    });
+  const addTier = () =>
+    set({
+      tiers: [...(draft.tiers ?? []), { minAmount: 0, variations: [''] }],
+    });
+  const removeTier = (i: number) =>
+    set({ tiers: draft.tiers.filter((_: any, j: number) => j !== i) });
 
   async function save() {
     setStatus('saving');
     try {
-      const next = await saveAlert(kind, draft);
+      const cleaned = {
+        ...draft,
+        tiers: [...(draft.tiers ?? [])].sort(
+          (a, b) => a.minAmount - b.minAmount,
+        ),
+      };
+      const next = await saveAlert(kind, cleaned);
+      setDraft(next);
       onSaved(next);
       setStatus('saved');
       setTimeout(() => setStatus('idle'), 1500);
@@ -188,9 +224,11 @@ function AlertCard({
             >
               {meta.label}
             </h3>
-            {!expanded && draft.template && (
+            {!expanded && draft.variations?.[0] && (
               <p className="text-xs text-muted-foreground truncate max-x-[180px]">
-                {draft.template}
+                {draft.variations[0]}
+                {draft.variations.length > 1 &&
+                  ` +${draft.variations.legnth - 1}`}
               </p>
             )}
           </div>
@@ -224,17 +262,36 @@ function AlertCard({
 
       {expanded && (
         <div className="px-5 pb-5 border-t border-border/50 pt-4 flex flex-col gap-4">
-          <Field label="Template">
-            <input
-              value={draft.template}
-              onChange={(e) => set({ template: e.target.value })}
-              placeholder="{username} just followed!"
-              className="w-full bg-secondary/50 border border-border
-                rounded-xl px-3 py-2.5 text-sm text-foreground
-                placehodler:text-muted-foreground/40 focus:outline-none
-                focus:ring-2 focus:ring-primary/40 focus:border-primary/40
-                transition-all"
-            />
+          <Field label="Message variations (one picked at random)">
+            <div className="flex flex-col gap-2">
+              {draft.variations.map((v: string, i: number) => (
+                <div key={i} className="flex gap-2">
+                  <input
+                    value={v}
+                    onChange={(e) => setVariation(i, e.target.value)}
+                    placeholder="{name} just followed!"
+                    className="w-full bg-secondary/50 border border-border rounded-xl
+                      px-3 py-2.5 text-sm text-foreground focus:outline-none
+                      focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all"
+                  />
+                  <button
+                    onClick={() => removeVariation(i)}
+                    disabled={draft.variations.length === 1}
+                    className="px-3 rounded-xl border border-border text-muted-foreground
+                      hover:text-foreground disabled:opacity-30"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+              <button
+                onClick={addVariation}
+                className="flex items-center gap-1.5 text-xs font-semibold text-primary
+                  hover:opacity-80 self-start"
+              >
+                <Plus size={13} /> Add variation
+              </button>
+            </div>
           </Field>
 
           <Field label="Sound URL">
@@ -288,6 +345,74 @@ function AlertCard({
               />
             </Field>
           </div>
+          {hasTiers && (
+            <Field label="Tiers (scale with magnitude)">
+              <div className="flex flex-col gap-3">
+                {(draft.tiers ?? []).map((t: any, i: number) => (
+                  <div
+                    key={i}
+                    className="rounded-xl border border-border/60 bg-secondary/30 p-3 flex flex-col gap-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground uppercase tracking-wider">
+                        ≥
+                      </span>
+                      <input
+                        type="number"
+                        value={t.minAmount}
+                        onChange={(e) =>
+                          setTier(i, { minAmount: Number(e.target.value) })
+                        }
+                        className="w-24 bg-secondary/50 border border-border rounded-lg px-2 py-1.5 text-sm"
+                        style={{
+                          fontFamily: 'JetBrains Mono, monospace',
+                          fontSize: '12px',
+                        }}
+                      />
+                      <button
+                        onClick={() => removeTier(i)}
+                        className="ml-auto text-muted-foreground hover:text-red-400"
+                      >
+                        <Plus size={14} />
+                      </button>
+                    </div>
+                    {t.variations.map((v: string, vi: number) => (
+                      <input
+                        key={vi}
+                        value={v}
+                        onChange={(e) =>
+                          setTier(i, {
+                            variations: t.variations.map(
+                              (x: string, j: number) =>
+                                j === vi ? e.target.value : x,
+                            ),
+                          })
+                        }
+                        placeholder="💎 {name} dropped {bits} bits!!"
+                        className="w-full bg-secondary/50 border border-border rounded-lg px-2 py-1.5 text-sm"
+                      />
+                    ))}
+                    <button
+                      onClick={() =>
+                        setTier(i, { variations: [...t.variations, ''] })
+                      }
+                      className="flex items-center gap-1 text-xs text-primary self-start"
+                    >
+                      <Plus size={12} /> variation
+                    </button>
+                  </div>
+                ))}
+                <button
+                  onClick={addTier}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-primary
+                    hover:opacity-80 self-start"
+                >
+                  <Plus size={13} /> Add tier
+                </button>
+              </div>
+            </Field>
+          )}
+
           {status === 'error' && (
             <div
               className="flex items-center gap-2 text-xs text-red-400
@@ -319,7 +444,13 @@ function AlertCard({
             </button>
 
             <button
-              onClick={() => previewRef.current?.previewDraft(kind, draft)}
+              onClick={() =>
+                previewRef.current?.previewDraft(
+                  kind,
+                  draft,
+                  testAmount || undefined,
+                )
+              }
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl
                 text-sm font-semibold bg-secondary/50 hover:bg-secondary
                 text-muted-foreground hover:text-foreground border
@@ -329,8 +460,21 @@ function AlertCard({
               Preview
             </button>
 
+            {hasTiers && (
+              <input
+                type="number"
+                value={testAmount}
+                onChange={(e) => setTestAmount(Number(e.target.value))}
+                title="magnitude for preview / fire"
+                className="w-20 bg-secondary/50 border border-border rounded-xl px-2 py-2 text-sm"
+                style={{
+                  fontFamily: 'JetBrains Mono, monospace',
+                  fontSize: '12px',
+                }}
+              />
+            )}
             <button
-              onClick={() => fireTestAlert(kind)}
+              onClick={() => fireTestAlert(kind, testAmount || undefined)}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-xl
                 text-sm font-semibold border transition-all ml-auto
                 ${meta.bg} ${meta.color} hover:opacity-90`}

@@ -16,6 +16,17 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY CHECK (id = 1), data TEXT NOT NULL);
 `);
 
+function migrateAlertConfig(raw: unknown): unknown {
+  if (!raw || typeof raw !== 'object') return raw;
+  const r = raw as Record<string, unknown>;
+  if (!Array.isArray(r.variations)) {
+    r.variations = typeof r.template === 'string' ? [r.template] : [];
+  }
+  delete r.template;
+  if (!Array.isArray(r.tiers)) r.tiers = [];
+  return r;
+}
+
 class ConfigStore extends EventEmitter {
   private alerts = new Map<AlertKind, AlertConfig>();
   private settings: Settings = DEFAULT_SETTINGS;
@@ -30,7 +41,11 @@ class ConfigStore extends EventEmitter {
     for (const kind of ALERT_KINDS) {
       seedAlert.run(kind, JSON.stringify(DEFAULT_ALERTS[kind]));
       const row = readAlert.get(kind) as { data: string };
-      this.alerts.set(kind, AlertConfigSchema.parse(JSON.parse(row.data)));
+
+      this.alerts.set(
+        kind,
+        AlertConfigSchema.parse(migrateAlertConfig(JSON.parse(row.data))),
+      );
     }
     db.prepare(`INSERT OR IGNORE INTO settings (id, data) VALUES (1, ?)`).run(
       JSON.stringify(DEFAULT_SETTINGS),

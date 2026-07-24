@@ -9,7 +9,7 @@ import { makeStatusSnapshot } from '../status/statusService.js';
 import { tokensMatch } from '../security.js';
 
 interface AdminRoutesOpts {
-  fireTest: (kind: AlertKind) => void;
+  fireTest: (kind: AlertKind, amount?: number) => void;
   eventsub: EventSubClient;
   hub: SseHub;
   lastEventAt: () => number | null;
@@ -88,10 +88,16 @@ export default async function adminRoutes(
     '/admin/api/test-alert',
     { preHandler: requireAdmin },
     async (req, reply) => {
-      const { kind } = (req.body ?? {}) as { kind?: string };
+      const { kind, amount } = (req.body ?? {}) as {
+        kind?: string;
+        amount?: number;
+      };
       if (!kind || !ALERT_KINDS.includes(kind as AlertKind))
         return reply.code(400).send({ error: 'unknown kind' });
-      opts.fireTest(kind as AlertKind);
+      opts.fireTest(
+        kind as AlertKind,
+        typeof amount === 'number' ? amount : undefined,
+      );
       return { ok: true };
     },
   );

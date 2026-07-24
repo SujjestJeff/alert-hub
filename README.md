@@ -75,20 +75,20 @@ Because this is _your_ box, it uses _your_ Twitch application credentials. One-t
 
 Copy `.env.example` to `.env` and fill it in.
 
-| Variable                   | Required | What it's for                                                                       |
-| -------------------------- | -------- | ----------------------------------------------------------------------------------- |
-| `PORT`                     | no       | Port to serve on. Default `3000`.                                                   |
-| `DATABASE_PATH`            | no       | Where SQLite lives. In Docker this is `/data/alertbox.db` (on the volume).          |
-| `TWITCH_CLIENT_ID`         | **yes**  | From your Twitch app.                                                               |
-| `TWITCH_CLIENT_SECRET`     | **yes**  | From your Twitch app. Keep it secret. Keep it safe.                                 |
-| `TWITCH_REDIRECT_URI`      | **yes**  | Must match your app's Redirect URL exactly.                                         |
+| Variable                   | Required | What it's for                                                                                                  |
+| -------------------------- | -------- | -------------------------------------------------------------------------------------------------------------- |
+| `PORT`                     | no       | Port to serve on. Default `3000`.                                                                              |
+| `DATABASE_PATH`            | no       | Where SQLite lives. In Docker this is `/data/alertbox.db` (on the volume).                                     |
+| `TWITCH_CLIENT_ID`         | **yes**  | From your Twitch app.                                                                                          |
+| `TWITCH_CLIENT_SECRET`     | **yes**  | From your Twitch app. Keep it secret. Keep it safe.                                                            |
+| `TWITCH_REDIRECT_URI`      | **yes**  | Must match your app's Redirect URL exactly.                                                                    |
 | `TWITCH_BROADCASTER_LOGIN` | no       | Not currently read by the backend (the broadcaster is resolved from your token instead) — safe to leave blank. |
-| `ADMIN_PASSWORD`           | **yes**  | Password for the config panel. Make it not-`password`.                              |
-| `SESSION_SECRET`           | **yes**  | Random string used to sign the admin login cookie.                                  |
-| `OVERLAY_TOKEN`            | **yes**  | Random string that gates your overlay URL so randos can't hijack it.                |
-| `EVENTSUB_WS_URL`          | no       | Only for pointing at the Twitch CLI mock server during development. Leave it unset. |
-| `LOG_LEVEL`                | no       | `fatal` \| `error` \| `warn` \| `info` \| `debug` \| `trace`. Default `info`.        |
-| `NODE_ENV`                 | no       | `production` in Docker. Also flips the login cookie to `secure`.                    |
+| `ADMIN_PASSWORD`           | **yes**  | Password for the config panel. Make it not-`password`.                                                         |
+| `SESSION_SECRET`           | **yes**  | Random string used to sign the admin login cookie.                                                             |
+| `OVERLAY_TOKEN`            | **yes**  | Random string that gates your overlay URL so randos can't hijack it.                                           |
+| `EVENTSUB_WS_URL`          | no       | Only for pointing at the Twitch CLI mock server during development. Leave it unset.                            |
+| `LOG_LEVEL`                | no       | `fatal` \| `error` \| `warn` \| `info` \| `debug` \| `trace`. Default `info`.                                  |
+| `NODE_ENV`                 | no       | `production` in Docker. Also flips the login cookie to `secure`.                                               |
 
 Generate the random ones however you like; this works:
 
@@ -136,6 +136,17 @@ Two buttons per alert:
 - **Fire test (live → OBS)** — pushes a fake event through the _real_ pipeline, so it shows up in the preview _and_ on your actual stream, exactly like the real thing. Save first; this uses saved config.
 
 Changes apply live — no restart, no refresh. Tweak a sound, fire a test, hear the difference.
+
+**Template tokens by kind**
+
+| Kind         | Tokens                                    |
+| ------------ | ----------------------------------------- |
+| follow       | `{name}`                                  |
+| subscription | `{name}` `{tier}`                         |
+| resub        | `{name}` `{tier}` `{months}` `{message}`  |
+| gift         | `{name}` `{count}` `{tier}`               |
+| cheer        | `{name}` `{bits}` `{message}`             |
+| raid         | `{name}` `{viewers}` (alias of `{count}`) |
 
 ---
 

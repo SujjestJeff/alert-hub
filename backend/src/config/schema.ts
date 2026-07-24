@@ -10,14 +10,38 @@ export const ALERT_KINDS = [
 ] as const;
 export type AlertKind = (typeof ALERT_KINDS)[number];
 
-export const AlertConfigSchema = z.object({
-  enabled: z.boolean(),
-  template: z.string().min(1).max(200),
-  sound: z.string().max(500).nullable(),
-  image: z.string().max(500).nullable(),
-  holdMs: z.number().int().min(500).max(30_000),
+export const TierSchema = z.object({
   minAmount: z.number().int().min(0),
+  variations: z.array(z.string().min(1).max(200)).min(1),
+  sound: z.string().max(500).nullable().optional(),
+  holdMs: z.number().int().min(500).max(30_000).optional(),
+  cssClass: z.string().max(50).optional(),
 });
+export type Tier = z.infer<typeof TierSchema>;
+
+export const AlertConfigSchema = z
+  .object({
+    enabled: z.boolean(),
+    //template: z.string().min(1).max(200),
+    variations: z.array(z.string()).default([]),
+    sound: z.string().max(500).nullable(),
+    image: z.string().max(500).nullable(),
+    holdMs: z.number().int().min(500).max(30_000),
+    minAmount: z.number().int().min(0),
+    tiers: z.array(TierSchema).default([]),
+  })
+  .superRefine((cfg, ctx) => {
+    for (let i = 1; i < cfg.tiers.length; i++) {
+      if (cfg.tiers[i].minAmount <= cfg.tiers[i - 1].minAmount) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['tiers', i, 'minAmount'],
+          message: 'tier thresholds must be sorted ascending and unique',
+        });
+      }
+    }
+  });
+
 export type AlertConfig = z.infer<typeof AlertConfigSchema>;
 
 export const SettingsSchema = z.object({
@@ -35,6 +59,7 @@ export const DEFAULT_ALERTS: Record<AlertKind, AlertConfig> = {
     image: null,
     holdMs: 3000,
     minAmount: 0,
+    tiers: [],
   },
   subscription: {
     enabled: true,
@@ -43,6 +68,7 @@ export const DEFAULT_ALERTS: Record<AlertKind, AlertConfig> = {
     image: null,
     holdMs: 4000,
     minAmount: 0,
+    tiers: [],
   },
   resub: {
     enabled: true,
@@ -51,6 +77,7 @@ export const DEFAULT_ALERTS: Record<AlertKind, AlertConfig> = {
     image: null,
     holdMs: 4000,
     minAmount: 0,
+    tiers: [],
   },
   gift: {
     enabled: true,
@@ -59,6 +86,7 @@ export const DEFAULT_ALERTS: Record<AlertKind, AlertConfig> = {
     image: null,
     holdMs: 4500,
     minAmount: 0,
+    tiers: [],
   },
   cheer: {
     enabled: true,
@@ -67,6 +95,17 @@ export const DEFAULT_ALERTS: Record<AlertKind, AlertConfig> = {
     image: null,
     holdMs: 3500,
     minAmount: 0,
+    tiers: [
+      {
+        minAmount: 1000,
+        variations: [
+          '💎 {name} dropped {bits}!!',
+          '{name} is a legend - {bits} bits!',
+        ],
+        holdMs: 5000,
+        cssClass: 'tier-hype',
+      },
+    ],
   },
   raid: {
     enabled: true,
@@ -75,6 +114,7 @@ export const DEFAULT_ALERTS: Record<AlertKind, AlertConfig> = {
     image: null,
     holdMs: 5000,
     minAmount: 0,
+    tiers: [],
   },
 };
 

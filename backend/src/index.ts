@@ -48,9 +48,9 @@ configStore.on('changed', () => {
 
 queue.on('play', (a) => hub.broadcast('alert', a));
 
-function fireTest(kind: AlertKind) {
-  const alert = makeSyntheticAlert(kind);
-  app.log.info({ id: alert.id, kind }, '[test] synthetic alert');
+function fireTest(kind: AlertKind, amount?: number) {
+  const alert = makeSyntheticAlert(kind, amount);
+  app.log.info({ id: alert.id, kind, amount }, '[test] synthetic alert');
   gifts.add(alert);
 }
 

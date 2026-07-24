@@ -8,6 +8,7 @@ const valid = {
   image: null,
   holdMs: 3000,
   minAmount: 0,
+  tiers: [],
 };
 
 describe('AlertConfigSchema', () => {
@@ -23,4 +24,18 @@ describe('AlertConfigSchema', () => {
     expect(() =>
       AlertConfigSchema.parse({ ...valid, minAmount: -1 }),
     ).toThrow());
+  it('rejects unsorted tiers', () =>
+    expect(() =>
+      AlertConfigSchema.parse({
+        ...valid,
+        tiers: [
+          { minAmount: 100, variations: ['a'] },
+          { minAmount: 50, variations: ['b'] },
+        ],
+      }),
+    ).toThrow());
+  it('defaults tiers to an empty array', () =>
+    expect(
+      () => AlertConfigSchema.parse({ ...valid, tiers: undefined }).tiers,
+    ).toEqual([]));
 });

@@ -36,12 +36,12 @@ export const getOverlayConfig = (token: string) =>
     r.json(),
   );
 
-export const fireTestAlert = (kind: string) =>
+export const fireTestAlert = (kind: string, amount?: number) =>
   fetch('/admin/api/test-alert', {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ kind }),
+    body: JSON.stringify({ kind, amount }),
   }).then(json);
 
 export const getStatus = () =>

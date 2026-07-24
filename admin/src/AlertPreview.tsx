@@ -5,9 +5,10 @@ import { KIND_CLASS, makeSampleAlert } from '@overlay/kinds.js';
 import '@overlay/alert.css';
 import './preview.css';
 import { getOverlayToken, getOverlayConfig } from './api';
+import { resolveAlert } from '@overlay/resolve.js';
 
 export interface PreviewHandle {
-  previewDraft: (kind: string, draft: any) => void;
+  previewDraft: (kind: string, draft: any, amount?: number) => void;
 }
 
 export const AlertPreview = forwardRef<PreviewHandle>(
@@ -23,35 +24,37 @@ export const AlertPreview = forwardRef<PreviewHandle>(
       let source: EventSource | null = null;
       (async () => {
         const { token } = await getOverlayToken();
-        liveConfig.current = toOverlayConfig(await getOverlayConfig(token));
+        liveConfig.current = (await getOverlayConfig(token)).alerts;
         source = new EventSource(`/events?token=${encodeURIComponent(token)}`);
         source.addEventListener('alert', (e: MessageEvent) => {
           const a = JSON.parse(e.data);
-          playRef.current?.(
-            a,
-            liveConfig.current[a.kind] ?? liveConfig.current.follow,
-          );
+          const cfg = liveConfig.current[a.kind];
+          if (cfg) playRef.current?.(a, resolveAlert(a.kind, cfg, a));
         });
         source.addEventListener(
           'config',
-          (e: MessageEvent) =>
-            (liveConfig.current = toOverlayConfig(JSON.parse(e.data))),
+          (e: MessageEvent) => (liveConfig.current = JSON.parse(e.data).alerts),
         );
       })();
       return () => source?.close();
     }, []);
 
     useImperativeHandle(ref, () => ({
-      previewDraft(kind, draft) {
-        const cfg = {
-          template: draft.template,
-          sound: draft.sound,
-          holdMs: draft.holdMs,
-          cssClass: KIND_CLASS[kind] ?? '',
+      previewDraft(kind, draft, amount) {
+        const alert = {
+          ...makeSampleAlert(kind),
+          ...amountFields(kind, amount),
         };
-        playRef.current?.(makeSampleAlert(kind), cfg);
+        playRef.current?.(alert, resolveAlert(kind, draft, amount));
       },
     }));
+
+    function amountFields(kind: string, amount?: number) {
+      if (amount == null) return {};
+      if (kind === 'cheer') return { bits: amount };
+      if (kind === 'resub') return { months: amount };
+      return { count: amount };
+    }
 
     return (
       <>

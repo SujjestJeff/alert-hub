@@ -15,6 +15,7 @@ import { normalize } from './alerts/normalize.js';
 import { AlertQueue } from './alerts/alertQueue.js';
 import { GiftAggregator } from './alerts/giftAggregator.js';
 import { configStore } from './config/configStore.js';
+import { goalStore } from './config/goalStore.js';
 import { shouldAlert } from './alerts/shouldAlert.js';
 import { makeSyntheticAlert } from './alerts/synthetic.js';
 import { AlertKind } from './config/schema.js';
@@ -26,6 +27,7 @@ let lastEventAt: number | null = null;
 
 tokenManager.init();
 configStore.init();
+goalStore.init();
 
 const configSettings = configStore.getSettings();
 const queue = new AlertQueue({
@@ -45,6 +47,8 @@ configStore.on('changed', () => {
   });
   gifts.updateWindowMs(settings.aggregationWindowMs);
 });
+
+goalStore.on('changed', () => hub.broadcast('goal', goalStore.list()));
 
 queue.on('play', (a) => hub.broadcast('alert', a));
 
@@ -71,6 +75,7 @@ eventsub.on('connected', (id) => app.log.info(`[eventsub] session ${id}`));
 eventsub.on('notification', (n) => {
   const alert = normalize(n);
   if (!alert) return;
+  goalStore.applyAlert(alert);
   const cfg = configStore.getAlert(alert.kind);
   if (!cfg || !shouldAlert(alert, cfg)) return;
   gifts.add(alert);

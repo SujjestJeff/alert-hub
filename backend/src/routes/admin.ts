@@ -7,6 +7,7 @@ import { ALERT_KINDS, type AlertKind } from '../config/schema.js';
 import { requireAdmin, ADMIN_COOKIE } from './adminAuth.js';
 import { makeStatusSnapshot } from '../status/statusService.js';
 import { tokensMatch } from '../security.js';
+import { goalStore } from '../config/goalStore.js';
 
 interface AdminRoutesOpts {
   fireTest: (kind: AlertKind, amount?: number) => void;
@@ -104,5 +105,45 @@ export default async function adminRoutes(
 
   app.get('/admin/api/status', { preHandler: requireAdmin }, async () =>
     makeStatusSnapshot(opts.eventsub, opts.hub, opts.lastEventAt()),
+  );
+
+  app.get('/admin/api/goals', { preHandler: requireAdmin }, async () =>
+    goalStore.list(),
+  );
+
+  app.put(
+    '/admin/api/goals',
+    { preHandler: requireAdmin },
+    async (req, reply) => {
+      try {
+        return goalStore.upsert(req.body);
+      } catch (err) {
+        return reply
+          .code(400)
+          .send({ error: 'invalid goal', detail: String(err) });
+      }
+    },
+  );
+
+  app.delete(
+    '/admin/api/goals/:id',
+    { preHandler: requireAdmin },
+    async (req) => {
+      goalStore.remove((req.params as { id: string }).id);
+      return { ok: true };
+    },
+  );
+
+  app.post(
+    '/admin/api/goals/:id/current',
+    { preHandler: requireAdmin },
+    async (req, reply) => {
+      const { id } = req.params as { id: string };
+      const { value } = (req.body ?? {}) as { value?: number };
+      if (typeof value !== 'number')
+        return reply.code(400).send({ error: 'value required' });
+      goalStore.setCurrent(id, value);
+      return { ok: true };
+    },
   );
 }

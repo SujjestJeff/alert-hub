@@ -39,6 +39,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A persistent (SQLite backed) message-dedupe store, replacing an in-memory map (survives restarts now)
 - Auto-restart of EventSub when the token manager reports a fresh connection
 - Readme bootstrap instructions
+- Goals tab in the admin dashboard for creating/editing goal bars (metric, target, color) with a live progress preview
+- Admin API client calls for goal CRUD and manually setting/simulating a goal's current value
+- `goals` overlay widget (`overlay/?widget=goals&token=...`) rendering persistent progress bars, added as a standalone OBS browser source
+- "Copy OBS URL" action in the Goals editor for the goals overlay widget link
 
 ### Changed
 

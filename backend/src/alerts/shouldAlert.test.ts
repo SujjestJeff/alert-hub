@@ -2,11 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { shouldAlert } from './shouldAlert.js';
 const cfg = (o = {}) => ({
   enabled: true,
-  template: 'x',
+  variations: ['x'],
   sound: null,
   image: null,
   holdMs: 3000,
   minAmount: 0,
+  tiers: [],
   ...o,
 });
 

@@ -1,8 +1,10 @@
 import type { RefObject } from 'react';
+import { useState } from 'react';
 import { Radio } from 'lucide-react';
 import { StatusBar } from './StatusBar';
 import { ConfigEditor } from './ConfigEditor';
 import { AlertPreview, type PreviewHandle } from './AlertPreview';
+import { GoalsEditor } from './GoalsEditor';
 
 export function Dashboard({
   config,
@@ -13,6 +15,8 @@ export function Dashboard({
   setConfig: (c: any) => void;
   previewRef: RefObject<PreviewHandle | null>;
 }) {
+  const [tab, setTab] = useState<'alerts' | 'goals'>('alerts');
+
   return (
     <div
       className="min-h-screen bg-background flex flex-col"
@@ -63,11 +67,37 @@ export function Dashboard({
           className="flex-1 overflow-y-auto px-6 py-6"
           style={{ scrollbarWidth: 'none' }}
         >
-          <ConfigEditor
-            config={config}
-            onChange={setConfig}
-            previewRef={previewRef}
-          />
+          <div className="flex gap-2 mb-6">
+            <button
+              onClick={() => setTab('alerts')}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${
+                tab === 'alerts'
+                  ? 'bg-primary/20 text-primary border-primary/30'
+                  : 'bg-secondary/50 text-muted-foreground border-border'
+              }`}
+            >
+              Alerts
+            </button>
+            <button
+              onClick={() => setTab('goals')}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${
+                tab === 'goals'
+                  ? 'bg-primary/20 text-primary border-primary/30'
+                  : 'bg-secondary/50 text-muted-foreground border-border'
+              }`}
+            >
+              Goals
+            </button>
+          </div>
+          {tab === 'alerts' ? (
+            <ConfigEditor
+              config={config}
+              onChange={setConfig}
+              previewRef={previewRef}
+            />
+          ) : (
+            <GoalsEditor />
+          )}{' '}
         </div>
         <aside
           className="w-[380px] shrink-0 border-l border-border bg-card/40

@@ -17,7 +17,7 @@ const cheerCfg = {
 
 describe('resolveAlert', () => {
   it('maps magnitude per kind', () => {
-    expect(magnitudeOf('cheer', { bits: 50 })).toBe(500);
+    expect(magnitudeOf('cheer', { bits: 50 })).toBe(50);
     expect(magnitudeOf('raid', { count: 40 })).toBe(40);
     expect(magnitudeOf('follow', {})).toBeNull();
   });

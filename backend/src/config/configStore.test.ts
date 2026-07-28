@@ -9,14 +9,16 @@ beforeEach(() => {
 
 describe('ConfigStore persistence', () => {
   it('seeds defaults on init', () => {
-    expect(configStore.getAlert('follow')?.template).toContain('followed');
+    expect(configStore.getAlert('follow')?.variations[0]).toContain(
+      'followed',
+    );
   });
 
   it('updates and persists an alert (survives a reload)', () => {
-    configStore.updateAlert('follow', { template: 'new {name}!' });
+    configStore.updateAlert('follow', { variations: ['new {name}!'] });
     const reloaded = new (Object.getPrototypeOf(configStore).constructor)();
     reloaded.init();
-    expect(reloaded.getAlert('follow').template).toBe('new {name}!');
+    expect(reloaded.getAlert('follow').variations[0]).toBe('new {name}!');
   });
 
   it('rejects an invalid update without persisting', () => {
@@ -26,7 +28,7 @@ describe('ConfigStore persistence', () => {
 
   it('migrates a legacy template row to variations on read', () => {
     db.prepare(`DELETE FROM alert_config WHERE kind = 'follow'`).run();
-    db.prepare(`INSERT INTO alert_config (kind, data) VALUES ('follow, ?)`).run(
+    db.prepare(`INSERT INTO alert_config (kind, data) VALUES ('follow', ?)`).run(
       JSON.stringify({
         enabled: true,
         template: 'legacy {name}!',

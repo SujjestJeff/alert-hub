@@ -22,8 +22,7 @@ export type Tier = z.infer<typeof TierSchema>;
 export const AlertConfigSchema = z
   .object({
     enabled: z.boolean(),
-    //template: z.string().min(1).max(200),
-    variations: z.array(z.string()).default([]),
+    variations: z.array(z.string().min(1).max(200)).default([]),
     sound: z.string().max(500).nullable(),
     image: z.string().max(500).nullable(),
     holdMs: z.number().int().min(500).max(30_000),
@@ -54,7 +53,7 @@ export type Settings = z.infer<typeof SettingsSchema>;
 export const DEFAULT_ALERTS: Record<AlertKind, AlertConfig> = {
   follow: {
     enabled: true,
-    template: '{name} just followed!',
+    variations: ['{name} just followed!'],
     sound: '/overlay/sounds/follow.ogg',
     image: null,
     holdMs: 3000,
@@ -63,7 +62,7 @@ export const DEFAULT_ALERTS: Record<AlertKind, AlertConfig> = {
   },
   subscription: {
     enabled: true,
-    template: '{name} subscribed! (Tier {tier})',
+    variations: ['{name} subscribed! (Tier {tier})'],
     sound: '/overlay/sounds/sub.ogg',
     image: null,
     holdMs: 4000,
@@ -72,7 +71,7 @@ export const DEFAULT_ALERTS: Record<AlertKind, AlertConfig> = {
   },
   resub: {
     enabled: true,
-    template: '{name} resubbed — {months} months!',
+    variations: ['{name} resubbed — {months} months!'],
     sound: '/overlay/sounds/sub.ogg',
     image: null,
     holdMs: 4000,
@@ -81,7 +80,7 @@ export const DEFAULT_ALERTS: Record<AlertKind, AlertConfig> = {
   },
   gift: {
     enabled: true,
-    template: '{name} gifted {count} subs!',
+    variations: ['{name} gifted {count} subs!'],
     sound: '/overlay/sounds/gift.ogg',
     image: null,
     holdMs: 4500,
@@ -90,7 +89,7 @@ export const DEFAULT_ALERTS: Record<AlertKind, AlertConfig> = {
   },
   cheer: {
     enabled: true,
-    template: '{name} cheered {bits} bits!',
+    variations: ['{name} cheered {bits} bits!'],
     sound: '/overlay/sounds/cheer.ogg',
     image: null,
     holdMs: 3500,
@@ -109,7 +108,7 @@ export const DEFAULT_ALERTS: Record<AlertKind, AlertConfig> = {
   },
   raid: {
     enabled: true,
-    template: '{name} raided with {count}!',
+    variations: ['{name} raided with {count}!'],
     sound: '/overlay/sounds/raid.ogg',
     image: null,
     holdMs: 5000,

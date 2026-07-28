@@ -46,3 +46,28 @@ export const fireTestAlert = (kind: string, amount?: number) =>
 
 export const getStatus = () =>
   fetch('/admin/api/status', { credentials: 'include' }).then(json);
+
+export const getGoals = () =>
+  fetch('/admin/api/goals', { credentials: 'include' }).then(json);
+
+export const saveGoal = (patch: unknown) =>
+  fetch('/admin/api/goals', {
+    method: 'PUT',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  }).then(json);
+
+export const deleteGoal = (id: string) =>
+  fetch(`/admin/api/goals/${id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  }).then(json);
+
+export const setGoalCurrent = (id: string, value: number) =>
+  fetch(`/admin/api/goals/${id}/current`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ value }),
+  }).then(json);

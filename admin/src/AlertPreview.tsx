@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { Monitor } from 'lucide-react';
 import { createDomRenderer } from '@overlay/renderer.js';
-import { KIND_CLASS, makeSampleAlert } from '@overlay/kinds.js';
+import { makeSampleAlert } from '@overlay/kinds.js';
 import '@overlay/alert.css';
 import './preview.css';
 import { getOverlayToken, getOverlayConfig } from './api';
@@ -79,16 +79,3 @@ export const AlertPreview = forwardRef<PreviewHandle>(
     );
   },
 );
-
-function toOverlayConfig(payload: any) {
-  const out: Record<string, any> = {};
-  for (const [kind, c] of Object.entries<any>(payload.alerts)) {
-    out[kind] = {
-      template: c.template,
-      sound: c.sound,
-      holdMs: c.holdMs,
-      cssClass: KIND_CLASS[kind] ?? '',
-    };
-  }
-  return out;
-}

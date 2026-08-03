@@ -88,7 +88,7 @@ Copy `.env.example` to `.env` and fill it in.
 | `OVERLAY_TOKEN`            | **yes**  | Random string that gates your overlay URL so randos can't hijack it.                                           |
 | `EVENTSUB_WS_URL`          | no       | Only for pointing at the Twitch CLI mock server during development. Leave it unset.                            |
 | `LOG_LEVEL`                | no       | `fatal` \| `error` \| `warn` \| `info` \| `debug` \| `trace`. Default `info`.                                  |
-| `NODE_ENV`                 | no       | `production` in Docker. Also flips the login cookie to `secure`.                                               |
+| `COOKIE_SECURE`            | no       | Set `true` only behind real HTTPS. Controls the admin login cookie's `Secure` flag. Default `false`.           |
 
 Generate the random ones however you like; this works:
 
@@ -194,7 +194,7 @@ location /events {
 }
 ```
 
-And once you're on HTTPS, set `NODE_ENV=production` so the admin cookie goes `secure`. (On plain `http://localhost` a `secure` cookie is silently never sent, and login mysteriously "doesn't work" — which is the second most common setup faceplant.)
+And once you're on HTTPS, set `COOKIE_SECURE=true` so the admin cookie goes `Secure`. (On plain `http://localhost` a `Secure` cookie is silently never sent, and login mysteriously "doesn't work" — which is the second most common setup faceplant.)
 
 ---
 
@@ -206,7 +206,7 @@ And once you're on HTTPS, set `NODE_ENV=production` so the admin cookie goes `se
 
 **`redirect_mismatch` at login.** Your Twitch app's Redirect URL doesn't exactly match `TWITCH_REDIRECT_URI`. See the big warning above. It's this.
 
-**Login just bounces me back.** Almost always the `secure` cookie on `http`. Confirm `NODE_ENV` isn't `production` when you're on plain localhost.
+**Login just bounces me back.** Almost always the `Secure` cookie on `http`. Confirm `COOKIE_SECURE` isn't `true` when you're on plain localhost.
 
 **I hard-killed the container mid-stream.** It's fine. `docker compose up` again — tokens and config live on the Docker volume, and it reconnects to Twitch on its own. No re-login, no re-config.
 

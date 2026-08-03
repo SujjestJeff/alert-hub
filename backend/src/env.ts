@@ -19,7 +19,10 @@ const schema = z.object({
   OVERLAY_TOKEN: z.string(),
   SESSION_SECRET: z.string(),
   ADMIN_PASSWORD: z.string(),
-  NODE_ENV: z.string().optional(),
+  COOKIE_SECURE: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
 });
 
 const parsed = schema.safeParse(process.env);

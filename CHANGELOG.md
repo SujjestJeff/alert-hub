@@ -58,6 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - dedupeStore.prune()'s interval is now stored and cleared on stop()
 - EventSub awaiting getBroadcasterId() at the module level potentially crashes the process if Helix fails or the user isn't authenticated; It now resolves lazily and emits broadcaster-id-error instead of throwing
+- Admin login cookie's `secure` flag was tied to `NODE_ENV`, which the Dockerfile always bakes as `production` — every Docker/review-portal boot over plain HTTP silently dropped the cookie and login 401'd forever. Replaced with a dedicated `COOKIE_SECURE` env var (default `false`, explicit opt-in for real HTTPS deploys)
 
 ## [0.1.0] - 2026-06-26
 

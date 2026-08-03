@@ -33,7 +33,7 @@ export default async function adminRoutes(
       httpOnly: true,
       sameSite: 'lax',
       path: '/',
-      secure: env.NODE_ENV === 'production',
+      secure: env.COOKIE_SECURE,
       maxAge: 60 * 60 * 24 * 7,
     });
     return { ok: true };

@@ -35,6 +35,7 @@ ENV DATABASE_PATH=/data/alertbox.db
 ENV LOG_LEVEL=info
 ENV TWITCH_CLIENT_ID=placeholder-client-id
 ENV TWITCH_REDIRECT_URI=http://localhost:3000/auth/callback
+ENV COOKIE_SECURE=false
 
 # Includes compiled native binaries (better-sqlite3) from the deps stage
 COPY --from=deps /app/node_modules ./node_modules

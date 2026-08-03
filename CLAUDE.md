@@ -17,7 +17,7 @@ This is an npm-workspaces monorepo:
 - **Overlay**: plain JS/CSS, no framework, no build step
 - **Testing**: Vitest (root config ties together backend + admin suites)
 - **Linting**: ESLint 9 flat config with `typescript-eslint`, `react-hooks`, `react-refresh`
-- **Containers**: two separate, both maintained — see [Docker](#docker) below
+- **Containers**: one plain `Dockerfile` — see [Docker](#docker) below
 
 ## Commands
 
@@ -51,11 +51,9 @@ backend/
 admin/
   src/            # React admin SPA (config editor, live preview, status bar)
 overlay/          # static overlay page served at /overlay
-rootfs/            # container filesystem overlay for the jumproom image (see Docker)
-Dockerfile          # primary image: slim Node runtime, backend + admin + overlay
-Dockerfile.jumproom # alternate image: app running inside a noVNC-accessible browser
-startapp.sh         # jumproom container startup (launches Chrome via the baseimage)
-docker-compose.yml  # primary image service definition
+Dockerfile          # the one image: slim Node runtime, backend + admin + overlay
+docker-entrypoint.sh # bakes placeholder defaults, generates missing secrets on first boot
+docker-compose.yml  # image service definition
 ```
 
 ## React & TypeScript Conventions
@@ -84,36 +82,24 @@ docker-compose.yml  # primary image service definition
 
 ## Docker
 
-There are **two separate, both-maintained** container images. Don't conflate them.
+**Ship exactly one Dockerfile.** There used to be a second, JumpRoom-specific image (`Dockerfile.jumproom`) that ran the app inside a Chrome/noVNC shell for visual review. That's retired — the [Review Portal](#review-portal-jumproom) now builds this plain `Dockerfile` directly and pairs its own review shell around the resulting container, so the app image must never bake in browser/VNC scaffolding again. Don't re-add a second Dockerfile for review purposes.
 
-### Primary: `Dockerfile`
-
-The production deploy path. A slim multi-stage Node 20 build: compiles the backend, builds the admin SPA, copies both plus the overlay into a runtime image that serves everything from one Fastify process on port 3000. This is what `docker-compose.yml` builds and what end users run.
+A slim multi-stage Node 20 build: compiles the backend, builds the admin SPA, copies both plus the overlay into a runtime image that serves everything from one Fastify process on port 3000, bound to `0.0.0.0`. This is what `docker-compose.yml` builds and what end users run.
 
 ```bash
 docker compose up -d
 # Admin panel + API + overlay all on http://localhost:3000
 ```
 
-### Jumproom: `Dockerfile.jumproom`
+### Review Portal (JumpRoom)
 
-A separate, intentional environment for **visually reviewing the running app** — e.g. design/UX review during stream sessions — by putting it inside a real Chrome instance exposed over noVNC, rather than just reading source or a static build. This is **not legacy and not a fallback**; it's actively maintained alongside the primary image for that review workflow. Base image: `jlesage/baseimage-gui:ubuntu-20.04-v4`.
+The Review Portal clones the public repo at the exact commit SHA under review and builds this `Dockerfile` itself — no ECR, no pre-built image, no auth passed to the clone. It boots the resulting container with **zero external configuration**: there is no confirmed mechanism yet for injecting runtime env vars/secrets into the booted review container (the portal's project/PR env var system only reaches the *build* step as non-secret build args). Because of that, the image must be self-sufficient at runtime:
 
-Follow the baseimage's conventions when touching this file or `rootfs/`:
-
-- **`add-pkg`** instead of raw `apt-get install` — handles cache cleanup automatically
-- **`set-cont-env KEY value`** to set internal env vars (e.g. `APP_NAME`, `APP_VERSION`)
-- **`rootfs/`** mirrors the container filesystem; `COPY rootfs/ /` installs all overlays (noVNC UI, NVIDIA/EGL config, PulseAudio client config)
-- **`/etc/cont-init.d/`** for startup scripts — use number range **50–59** for custom scripts; ranges 10–29 and 70–89 are reserved for the baseimage
-- **Do not** call `useradd` or manually manage the app user — the baseimage creates it at runtime via `USER_ID`/`GROUP_ID` (default: 1000)
-- **`/config`** is the baseimage's standard persistent data directory, owned by the app user
-- `startapp.sh` launches Chrome pointed at the built admin app; noVNC exposes that Chrome window on port **5800**
-
-```bash
-docker buildx build --platform linux/amd64 -f Dockerfile.jumproom -t alert-hub-jumproom .
-docker run --rm -p 5800:5800 alert-hub-jumproom
-# Open http://localhost:5800 in a browser to visually drive the app
-```
+- **Non-secret defaults are baked in as `ENV`** in the Dockerfile (`PORT`, `DATABASE_PATH`, `LOG_LEVEL`, `TWITCH_CLIENT_ID`, `TWITCH_REDIRECT_URI`) so the app boots without a real `.env`.
+- **Secrets the app can't function without but that can't be pre-provisioned** (`SESSION_SECRET`, `OVERLAY_TOKEN`, `ADMIN_PASSWORD`, and a `TWITCH_CLIENT_SECRET` placeholder) are generated on first boot by `docker-entrypoint.sh` and persisted next to the SQLite database, so nothing secret-shaped is baked into image layers and values survive restarts if a volume is mounted. Real Twitch OAuth won't work against the placeholder secret — that's expected for a review boot; the admin UI/overlay are still fully reviewable.
+- Keep this defaults-plus-first-boot-generation logic in `Dockerfile`/`docker-entrypoint.sh` — it's load-bearing for the review pipeline, not scaffolding to clean up.
+- The image just `EXPOSE`s 3000 and binds `0.0.0.0`; it does not launch a browser or set up VNC. The reviewer-facing shell (JumpRoom) is responsible for that, not this repo.
+- The repo must stay **public** — the portal's build clone has no auth.
 
 ## Contributing
 

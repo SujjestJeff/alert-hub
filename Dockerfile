@@ -23,6 +23,19 @@ RUN npm run build
 FROM node:20-bookworm-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
+
+# Non-secret defaults so the container boots with zero external config (e.g.
+# for automated review environments). TWITCH_CLIENT_SECRET/OVERLAY_TOKEN/
+# SESSION_SECRET/ADMIN_PASSWORD are never baked in — docker-entrypoint.sh
+# generates them at first boot instead, so nothing secret-shaped lands in
+# the image layers. Override any of these with real values (e.g. via
+# docker-compose's env_file) for an actual deploy.
+ENV PORT=3000
+ENV DATABASE_PATH=/data/alertbox.db
+ENV LOG_LEVEL=info
+ENV TWITCH_CLIENT_ID=placeholder-client-id
+ENV TWITCH_REDIRECT_URI=http://localhost:3000/auth/callback
+
 # Includes compiled native binaries (better-sqlite3) from the deps stage
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/backend/dist ./backend/dist
@@ -30,5 +43,8 @@ COPY --from=build /app/admin/dist ./admin/dist
 COPY overlay ./overlay
 COPY backend/package.json ./backend/
 COPY package.json ./
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 EXPOSE 3000
+ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["node", "backend/dist/index.js"]

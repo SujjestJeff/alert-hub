@@ -1,0 +1,5 @@
+.preview-stage {
+  position: relative;
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  overflow: hidden;
+}

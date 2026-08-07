@@ -12,7 +12,9 @@
     "build": "npm run build -w backend && npm run build -w admin",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "typecheck": "npm run typecheck -w backend && npm run typecheck -w admin"
+    "typecheck": "npm run typecheck -w backend && npm run typecheck -w admin",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",

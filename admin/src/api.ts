@@ -71,3 +71,11 @@ export const setGoalCurrent = (id: string, value: number) =>
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ value }),
   }).then(json);
+
+export const saveSettings = (patch: unknown) =>
+  fetch('admin/api/settings', {
+    method: 'PUT',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  }).then(json);

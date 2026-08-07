@@ -47,6 +47,8 @@ export const SettingsSchema = z.object({
   aggregationWindowMs: z.number().int().min(0).max(10_000),
   gapMs: z.number().int().min(0).max(10_000),
   maxDurationMs: z.number().int().min(1_00).max(60_000),
+  alertingEnabled: z.boolean().default(true),
+  goalsEnabled: z.boolean().default(true),
 });
 export type Settings = z.infer<typeof SettingsSchema>;
 
@@ -121,4 +123,6 @@ export const DEFAULT_SETTINGS: Settings = {
   aggregationWindowMs: 2000,
   gapMs: 500,
   maxDurationMs: 8000,
+  alertingEnabled: true,
+  goalsEnabled: true,
 };

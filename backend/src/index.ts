@@ -38,6 +38,11 @@ const gifts = new GiftAggregator(configSettings.aggregationWindowMs, (a) =>
   queue.enqueue(a),
 );
 
+function broadcastGoals() {
+  const { goalsEnabled } = configStore.getSettings();
+  hub.broadcast('goal', goalsEnabled ? goalStore.list() : []);
+}
+
 configStore.on('changed', () => {
   hub.broadcast('config', configStore.getAll());
   const settings = configStore.getSettings();
@@ -46,9 +51,10 @@ configStore.on('changed', () => {
     gapMs: settings.gapMs,
   });
   gifts.updateWindowMs(settings.aggregationWindowMs);
+  broadcastGoals();
 });
 
-goalStore.on('changed', () => hub.broadcast('goal', goalStore.list()));
+goalStore.on('changed', () => broadcastGoals);
 
 queue.on('play', (a) => hub.broadcast('alert', a));
 
@@ -75,7 +81,9 @@ eventsub.on('connected', (id) => app.log.info(`[eventsub] session ${id}`));
 eventsub.on('notification', (n) => {
   const alert = normalize(n);
   if (!alert) return;
-  goalStore.applyAlert(alert);
+  const settings = configStore.getSettings();
+  if (settings.goalsEnabled) goalStore.applyAlert(alert);
+  if (!settings.alertingEnabled) return;
   const cfg = configStore.getAlert(alert.kind);
   if (!cfg || !shouldAlert(alert, cfg)) return;
   gifts.add(alert);

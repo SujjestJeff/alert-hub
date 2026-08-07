@@ -13,6 +13,7 @@ export default async function overlayRoutes(app: FastifyInstance) {
   app.get('/overlay/goals', (req, reply) => {
     const { token } = req.query as Record<string, string>;
     if (!checkOverlayToken(token)) return reply.code(401).send('unauthorized');
-    return { goals: goalStore.list() };
+    const { goalsEnabled } = configStore.getSettings();
+    return { goals: goalsEnabled ? goalStore.list() : [] };
   });
 }
